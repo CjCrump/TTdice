@@ -264,13 +264,14 @@ header h1 {
   font-size: 1.1rem;
   font-weight: 600;
   border-radius: 12px;
-  border: none;
-  background: #f9a825;
+  border: 2px;
+  border-color: black;
+  background: #2e7d32;
   cursor: pointer;
 }
 
 .roll-btn:hover {
-  background: #fb8c00;
+  background: #1b5e20;
 }
 
 .results {
