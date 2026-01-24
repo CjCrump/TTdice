@@ -7,26 +7,74 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<a class="home" href="https://cjcrump.github.io/personal-portfolio">Home</a>
+<main class="app">
 
-    <main class="game-container">
+<section class="dice-selector">
+    <div class="dice-control" data-die="4">
+      <button class="minus">−</button>
+      <span>d4</span>
+      <button class="plus">+</button>
+    </div>
 
-        <!--U+1F3B2-->
-        <h1>🎲 Dice Roller</h1>
+    <div class="dice-control" data-die="6">
+      <button class="minus">−</button>
+      <span>d6</span>
+      <button class="plus">+</button>
+    </div>
 
-        <img id="diceImage" src="images/dice1.png" alt="dice">
+    <div class="dice-control" data-die="8">
+      <button class="minus">−</button>
+      <span>d8</span>
+      <button class="plus">+</button>
+    </div>
 
-        <p id="diceResult">Roll the Dice!</p>
+    <div class="dice-control" data-die="10">
+      <button class="minus">−</button>
+      <span>d10</span>
+      <button class="plus">+</button>
+    </div>
 
-        <button id="rollBtn">Roll Dice</button>
+    <div class="dice-control" data-die="12">
+      <button class="minus">−</button>
+      <span>d12</span>
+      <button class="plus">+</button>
+    </div>
 
-        <div class="history">
-            <h3>Roll History</h3>
-            <ul id="historyList"></ul>
-        </div>
+    <div class="dice-control" data-die="20">
+      <button class="minus">−</button>
+      <span>d20</span>
+      <button class="plus">+</button>
+    </div>
+</section>
 
-    </main>
-    
-   <script src="script.js"></script> 
+<section class="play-area">
+
+    <header class="tray-header">
+        <h1>🎲 Dice Tray</h1>
+    </header>
+
+    <section class="dice-tray" id="diceTray">
+      <p class="tray-placeholder">Select dice to add them here</p>
+    </section>
+
+    <div class="bonus-control">
+        <button id="bonusMinus">−</button>
+        <span id="bonusValue">Bonus: 0</span>
+        <button id="bonusPlus">+</button>
+    </div>
+
+    <button class="roll-btn" id="rollBtn">Roll Dice</button>
+
+    <section class="results" id="results"></section>
+    <section class="history">
+        <h3>Roll History</h3>
+        <ul id="historyList"></ul>
+    </section>
+
+</section>
+</main>
+
+<script src="script.js"></script>
+
 </body>
 </html>
