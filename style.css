@@ -121,6 +121,10 @@ header h1 {
   margin-bottom: 0.25rem;
 }
 
+p {
+  color: white;
+}
+
 .dice-tray {
   width: 100%;
 
@@ -148,6 +152,20 @@ header h1 {
 .tray-placeholder {
   color: rgba(255,255,255,0.7);
   font-size: 0.95rem;
+}
+
+/* Tray shake feedback */
+.dice-tray.shake {
+  animation: trayShake 260ms ease-in-out;
+}
+
+@keyframes trayShake {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(-6px); }
+  40%  { transform: translateX(6px); }
+  60%  { transform: translateX(-4px); }
+  80%  { transform: translateX(4px); }
+  100% { transform: translateX(0); }
 }
 
 /* dice style */ 
@@ -184,23 +202,135 @@ header h1 {
   animation: roll 600ms ease-in-out;
 }
 
-/* show result after roll */
+/* Advantage / Disadvantage */
+.adv-control {
+  width: 50%;
+  min-width: 220px;
+  align-self: center;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  background: rgba(0,0,0,0.22);
+  border-radius: 12px;
+  padding: 0.6rem 0.75rem;
+}
+
+.adv-control.muted {
+  opacity: 0.45;
+}
+
+.adv-enable {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+}
+
+.adv-enable input {
+  width: 18px;
+  height: 18px;
+}
+
+.adv-state {
+  color: #fff;
+  opacity: 0.9;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* simple switch */
+.adv-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+
+.adv-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.adv-switch .slider {
+  position: absolute;
+  inset: 0;
+  background: #333;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.adv-switch .slider::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 140ms ease;
+}
+
+.adv-switch input:checked + .slider::before {
+  transform: translateX(20px);
+}
+
+.adv-switch input:disabled + .slider {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* =========================
+   RESULTS + HISTORY
+========================= */
+.results {
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.4;
+
+  /* prevent tray jump */
+  min-height: 90px;
+  max-height: 90px;
+
+  overflow: hidden;
+}
+
+/* Reserve vertical space so tray doesn't jump */
 .history {
   width: 100%;
-  max-width: 640px;
   margin-top: 0.75rem;
 }
 
-.history li {
-  font-size: 0.8rem;
-  padding: 0.35rem 0.5rem;
+.history h3 {
+  text-align: center;
+  font-size: 0.95rem;
   opacity: 0.9;
+  margin-bottom: 0.35rem;
 }
 
 .history ul {
-  max-height: 110px;
+  list-style: none;
+  padding: 0;
+
+  /* The important part: reserve space */
+  min-height: 170px;
+  max-height: 170px;
+
   overflow-y: auto;
 }
+
+.history li {
+  font-size: 0.85rem;
+  background: rgba(255,255,255,0.15);
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 0.3rem;
+}
+
 
 .die.show-result .die-type {
   opacity: 0;
@@ -274,32 +404,9 @@ header h1 {
   background: #1b5e20;
 }
 
-.results {
-  font-size: 0.95rem;
-  line-height: 1.4;
-  font-size: 0.95rem;
-  text-align: center;
-}
-
-.history h3 {
-  text-align: center;
-  font-size: 0.95rem;
-  opacity: 0.9;
-  margin-bottom: 0.25rem;
-}
-
-.history ul {
-  list-style: none;
-  padding: 0;
-  max-height: 140px;
-}
-
-.history li {
-  font-size: 0.85rem;
-  background: rgba(255,255,255,0.15);
-  padding: 0.4rem 0.6rem;
-  border-radius: 8px;
-  margin-bottom: 0.3rem;
+.roll-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* =========================

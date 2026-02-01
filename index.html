@@ -55,6 +55,7 @@
     <header class="tray-header">
         <h1>🎲 Dice Tray</h1>
     </header>
+    <p id="trayError" class="tray-error">Tray full (10 dice max)</p>
 
     <section class="dice-tray" id="diceTray">
       <p class="tray-placeholder">Select dice to add them here</p>
@@ -66,6 +67,21 @@
         <button id="bonusPlus">+</button>
     </div>
 
+    <div class="adv-control muted" id="advControl" aria-disabled="true">
+
+    <label class="adv-enable">
+      <input type="checkbox" id="advEnable" disabled />
+      <span>Advantage / Disadvantage</span>
+    </label>
+
+    <label class="adv-switch">
+      <input type="checkbox" id="advMode" checked disabled />
+      <span class="slider" aria-hidden="true"></span>
+    </label>
+
+     <span class="adv-state" id="advState">Advantage</span>
+    </div>
+
     <button class="roll-btn" id="rollBtn">Roll Dice</button>
 
     <section class="results" id="results"></section>
@@ -75,6 +91,9 @@
     </section>
 
 </section>
+<footer>
+  <p>Standard VERSION (v1.0.0)</p>
+</footer>
 </main>
 
 <script src="script.js"></script>

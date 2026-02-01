@@ -1,0 +1,26 @@
+TTDice Standard License
+Copyright © 2026 ChanceITstudio
+
+This software is licensed, not sold.
+
+You are granted a non-exclusive, non-transferable license to use TTDice
+(Standard Edition) for personal or commercial tabletop gaming use.
+
+You MAY:
+- Use the software on your own devices
+- Use it during live or streamed tabletop games
+- Share screenshots or video of the software in use
+
+You MAY NOT:
+- Redistribute or resell the software itself
+- Claim the software as your own work
+- Remove or alter attribution to ChanceITstudio
+
+This software is provided “as is”, without warranty of any kind.
+ChanceITstudio is not liable for any damages arising from its use.
+
+TTDice Standard does not include multiplayer or online features.
+
+For updates, roadmap, and support, visit the official project page.
+
+— ChanceITstudio
