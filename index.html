@@ -260,27 +260,24 @@
     }
 
     .die-badge {
-      width: 52px;
-      height: 52px;
+      width: 60px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Cinzel', serif;
-      font-size: 0.75rem;
-      font-weight: 700;
-      color: rgba(255,255,255,0.7);
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
       animation: die-float 3s ease-in-out infinite;
     }
 
-    .die-badge:nth-child(1) { background: linear-gradient(145deg, #a88830, #6a5520); animation-delay: 0s; }
-    .die-badge:nth-child(2) { background: linear-gradient(145deg, #a88830, #6a5520); animation-delay: 0.2s; }
-    .die-badge:nth-child(3) { background: linear-gradient(145deg, #a85530, #6a3320); animation-delay: 0.4s; }
-    .die-badge:nth-child(4) { background: linear-gradient(145deg, #a84040, #6a2020); animation-delay: 0.6s; }
-    .die-badge:nth-child(5) { background: linear-gradient(145deg, #3060b0, #1a3a70); animation-delay: 0.8s; }
-    .die-badge:nth-child(6) { background: linear-gradient(145deg, #306830, #1a4a1a); animation-delay: 1s; }
-    .die-badge:nth-child(7) { background: linear-gradient(145deg, #703090, #3a1a5a); animation-delay: 1.2s; }
+    .die-badge svg { width: 100%; height: 100%; overflow: visible; }
+
+    .die-badge:nth-child(1) { animation-delay: 0s; }
+    .die-badge:nth-child(2) { animation-delay: 0.2s; }
+    .die-badge:nth-child(3) { animation-delay: 0.4s; }
+    .die-badge:nth-child(4) { animation-delay: 0.6s; }
+    .die-badge:nth-child(5) { animation-delay: 0.8s; }
+    .die-badge:nth-child(6) { animation-delay: 1s; }
+    .die-badge:nth-child(7) { animation-delay: 1.2s; }
 
     @keyframes die-float {
       0%, 100% { transform: translateY(0); }
@@ -815,13 +812,60 @@
     <p class="hero-free-note">Free forever. No credit card. No ads.</p>
 
     <div class="dice-row" aria-hidden="true">
-      <div class="die-badge">d4</div>
-      <div class="die-badge">d6</div>
-      <div class="die-badge">d8</div>
-      <div class="die-badge">d10</div>
-      <div class="die-badge">d12</div>
-      <div class="die-badge">d20</div>
-      <div class="die-badge">d%</div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <polygon points="40,8 72,69 8,69" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
+      <polygon points="40,8 72,69 8,69" fill="url(#hg4)" stroke="#c9a84c" stroke-width="1.5"/>
+      <polygon points="40,20 62,62 18,62" fill="none" stroke="#c9a84c" stroke-width="0.6" opacity="0.35"/>
+      <text x="40" y="53" text-anchor="middle" dominant-baseline="central" font-family="'Cinzel',serif" font-size="10" font-weight="600" fill="#c9a84c" opacity="0.9" letter-spacing="1">d4</text>
+    </svg></div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg6" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <rect x="9" y="9" width="62" height="62" rx="9" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
+      <rect x="9" y="9" width="62" height="62" rx="9" fill="url(#hg6)" stroke="#c9a84c" stroke-width="1.5"/>
+      <rect x="14" y="14" width="52" height="52" rx="6" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.25"/>
+      <circle cx="27" cy="27" r="4.5" fill="#e8c56a"/>
+      <circle cx="53" cy="53" r="4.5" fill="#e8c56a"/>
+    </svg></div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg8" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <polygon points="40,5 70,22 74,52 56,73 24,73 6,52 10,22" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
+      <polygon points="40,5 70,22 74,52 56,73 24,73 6,52 10,22" fill="url(#hg8)" stroke="#c9a84c" stroke-width="1.5"/>
+      <polygon points="40,14 62,27 65,50 51,66 29,66 15,50 18,27" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.25"/>
+      <text x="40" y="44" text-anchor="middle" dominant-baseline="central" font-family="'Cinzel',serif" font-size="10" font-weight="600" fill="#c9a84c" opacity="0.9" letter-spacing="1">d8</text>
+    </svg></div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg10" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <polygon points="40,4 74,34 62,74 18,74 6,34" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
+      <polygon points="40,4 74,34 62,74 18,74 6,34" fill="url(#hg10)" stroke="#c9a84c" stroke-width="1.5"/>
+      <polygon points="40,14 66,36 56,67 24,67 14,36" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.25"/>
+      <text x="40" y="47" text-anchor="middle" dominant-baseline="central" font-family="'Cinzel',serif" font-size="10" font-weight="600" fill="#c9a84c" opacity="0.9" letter-spacing="1">d10</text>
+    </svg></div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg12" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <polygon points="40,5 66,14 76,40 66,66 40,75 14,66 4,40 14,14" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
+      <polygon points="40,5 66,14 76,40 66,66 40,75 14,66 4,40 14,14" fill="url(#hg12)" stroke="#c9a84c" stroke-width="1.5"/>
+      <polygon points="40,14 60,21 68,40 60,59 40,66 20,59 12,40 20,21" fill="none" stroke="#c9a84c" stroke-width="0.5" opacity="0.25"/>
+      <text x="40" y="42" text-anchor="middle" dominant-baseline="central" font-family="'Cinzel',serif" font-size="10" font-weight="600" fill="#c9a84c" opacity="0.9" letter-spacing="1">d12</text>
+    </svg></div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg20" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <polygon points="40,5 76,68 4,68" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
+      <polygon points="40,5 76,68 4,68" fill="url(#hg20)" stroke="#c9a84c" stroke-width="1.8"/>
+      <polygon points="40,26 60,62 20,62" fill="none" stroke="#c9a84c" stroke-width="0.8" opacity="0.4"/>
+      <line x1="40" y1="5" x2="40" y2="26" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+      <line x1="76" y1="68" x2="60" y2="62" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+      <line x1="4" y1="68" x2="20" y2="62" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+      <text x="40" y="52" text-anchor="middle" dominant-baseline="central" font-family="'Cinzel',serif" font-size="10" font-weight="600" fill="#c9a84c" opacity="0.9" letter-spacing="1">d20</text>
+    </svg></div>
+      <div class="die-badge"><svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="hg100" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1a3d1e"/><stop offset="100%" stop-color="#0d1f10"/></linearGradient></defs>
+      <circle cx="42" cy="43" r="32" fill="rgba(0,0,0,0.5)"/>
+      <circle cx="40" cy="40" r="32" fill="url(#hg100)" stroke="#c9a84c" stroke-width="1.5"/>
+      <circle cx="40" cy="40" r="25" fill="none" stroke="#c9a84c" stroke-width="0.6" opacity="0.3"/>
+      <circle cx="40" cy="40" r="16" fill="none" stroke="#c9a84c" stroke-width="0.4" opacity="0.15"/>
+      <text x="40" y="41" text-anchor="middle" dominant-baseline="central" font-family="'Cinzel',serif" font-size="10" font-weight="600" fill="#c9a84c" opacity="0.9" letter-spacing="1">d%</text>
+    </svg></div>
     </div>
   </section>
 
@@ -1055,7 +1099,7 @@
 
     // Already signed in → go straight to tray
     auth?.onAuthStateChanged(user => {
-      if (user) window.location.href = 'app.html';
+      if (user) window.location.href = 'index.html';
     });
 
     // ─── Tabs ───
