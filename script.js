@@ -1,370 +1,494 @@
-// =========================
-// DOM
-// =========================
-const diceTray = document.getElementById("diceTray");
-const rollBtn = document.getElementById("rollBtn");
-const results = document.getElementById("results");
+/* ═══════════════════════════════════════
+   TTDice v2 — script.js
+   Supabase-ready, full session stats
+═══════════════════════════════════════ */
 
-const bonusValueEl = document.getElementById("bonusValue");
-const bonusPlus = document.getElementById("bonusPlus");
-const bonusMinus = document.getElementById("bonusMinus");
+// ─── DOM ───
+const diceTray      = document.getElementById('diceTray');
+const rollBtn       = document.getElementById('rollBtn');
+const resultsEl     = document.getElementById('results');
+const bonusValueEl  = document.getElementById('bonusValue');
+const bonusPlus     = document.getElementById('bonusPlus');
+const bonusMinus    = document.getElementById('bonusMinus');
+const historyList   = document.getElementById('historyList');
+const trayError     = document.getElementById('trayError');
+const clearBtn      = document.getElementById('clearBtn');
+const copyResultBtn = document.getElementById('copyResultBtn');
+const clearHistBtn  = document.getElementById('clearHistoryBtn');
+const advControl    = document.getElementById('advControl');
+const advEnable     = document.getElementById('advEnable');
+const advMode       = document.getElementById('advMode');
+const advState      = document.getElementById('advState');
+const trayHint      = document.getElementById('trayHint');
 
-const historyList = document.getElementById("historyList");
+// Stats
+const statTotalEl = document.getElementById('statTotal');
+const statRollsEl = document.getElementById('statRolls');
+const statBestEl  = document.getElementById('statBest');
+const statAvgEl   = document.getElementById('statAvg');
 
-// Optional (we’ll guard in code so it never crashes if missing)
-const trayError = document.getElementById("trayError");
+// Sync
+const syncDot   = document.getElementById('syncDot');
+const syncLabel = document.getElementById('syncLabel');
+const syncSub   = document.querySelector('.sync-sub');
 
-// Advantage / Disadvantage
-const advControl = document.getElementById("advControl");
-const advEnable = document.getElementById("advEnable");
-const advMode = document.getElementById("advMode");
-const advState = document.getElementById("advState");
+// ─── Constants ───
+const MAX_DICE    = 10;
+const MAX_HISTORY = 20;
 
-// =========================
-// STATE
-// =========================
-const MAX_DICE = 10;
-const MAX_HISTORY = 10;
+// ─── State ───
+let selectedDice = [];
+let bonus        = 0;
+let rollHistory  = [];
+let lastResult   = null;
 
-let selectedDice = []; // array of sides: [6,6,20,...]
-let bonus = 0;
-let rollHistory = [];
+// Session stats
+let sessionStats = {
+  totalDice : 0,
+  rollCount : 0,
+  bestRoll  : null,
+  totals    : [],
+};
 
-// =========================
-// RNG (trustworthy)
-// =========================
+// ─── Supabase Setup ───
+let supabase = null;
+
+function initSupabase() {
+  if (typeof window.SUPABASE_URL === 'undefined' || typeof window.SUPABASE_ANON_KEY === 'undefined') return;
+  if (typeof window.supabaseJs === 'undefined') return;
+
+  try {
+    supabase = window.supabaseJs.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    syncDot.classList.add('connected');
+    syncLabel.textContent = 'Supabase connected';
+    if (syncSub) syncSub.textContent = 'Rolls are being synced to your database.';
+    console.info('[TTDice] Supabase connected');
+  } catch (e) {
+    syncDot.classList.add('error');
+    syncLabel.textContent = 'Connection error';
+    console.warn('[TTDice] Supabase init failed:', e);
+  }
+}
+
+async function logRollToSupabase(payload) {
+  if (!supabase) return;
+  try {
+    const { error } = await supabase.from('rolls').insert([payload]);
+    if (error) console.warn('[TTDice] Supabase insert error:', error.message);
+  } catch (e) {
+    console.warn('[TTDice] Supabase log error:', e);
+  }
+}
+
+// ─── RNG ───
 function secureRoll(sides) {
   const buf = new Uint32Array(1);
   crypto.getRandomValues(buf);
   return (buf[0] % sides) + 1;
 }
 
-// =========================
-// UX helpers
-// =========================
+// ─── UX Helpers ───
 function shakeTray() {
-  diceTray.classList.remove("shake"); // reset if spam-clicked
-  void diceTray.offsetWidth;          // force reflow to restart animation
-  diceTray.classList.add("shake");
-  setTimeout(() => diceTray.classList.remove("shake"), 280);
+  diceTray.classList.remove('shake');
+  void diceTray.offsetWidth;
+  diceTray.classList.add('shake');
+  setTimeout(() => diceTray.classList.remove('shake'), 320);
 }
 
 function showTrayError() {
-  // If you haven’t added #trayError yet, do nothing (no crashes)
-  if (!trayError) return;
-
-  trayError.classList.add("show");
-  setTimeout(() => trayError.classList.remove("show"), 1500);
+  trayError.classList.add('visible');
+  shakeTray();
+  setTimeout(() => trayError.classList.remove('visible'), 2000);
 }
 
-// =========================
-// UI sync
-// =========================
+function copyText(text) {
+  navigator.clipboard?.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
+
+// ─── Bonus UI ───
 function updateBonusUI() {
-  bonusValueEl.textContent = `Bonus: ${bonus}`;
+  const sign = bonus >= 0 ? '+' : '';
+  bonusValueEl.textContent = `${sign}${bonus}`;
 }
 
-function updateRollBtnUI() {
+// ─── Roll Button ───
+function updateRollBtn() {
   rollBtn.disabled = selectedDice.length === 0;
+  clearBtn.disabled = selectedDice.length === 0;
 }
 
-function updatePlusDisabledUI() {
-  const isFull = selectedDice.length >= MAX_DICE;
-  document.querySelectorAll(".dice-control .plus").forEach(btn => {
-    btn.disabled = isFull;
+// ─── Plus buttons ───
+function updatePlusButtons() {
+  const full = selectedDice.length >= MAX_DICE;
+  diceTray.classList.toggle('full', full);
+  document.querySelectorAll('.die-row .plus').forEach(btn => {
+    btn.disabled = full;
   });
-  diceTray.classList.toggle("full", isFull);
 }
 
-function updateDiceSelectorCountsUI() {
+// ─── Die count labels in left panel ───
+function updateCountLabels() {
   const counts = {};
-  selectedDice.forEach(sides => {
-    counts[sides] = (counts[sides] || 0) + 1;
-  });
+  selectedDice.forEach(s => { counts[s] = (counts[s] || 0) + 1; });
 
-  document.querySelectorAll(".dice-control").forEach(control => {
-    const sides = Number(control.dataset.die);
-    const label = control.querySelector("span");
-    const count = counts[sides] || 0;
+  document.querySelectorAll('.die-row').forEach(row => {
+    const sides = Number(row.dataset.die);
+    const el = document.getElementById(`count-${sides}`);
+    if (!el) return;
 
-    // Keep your existing label style, just add count when >0
-    label.textContent = count > 0 ? `d${sides} (${count})` : `d${sides}`;
+    if (counts[sides]) {
+      el.textContent = `×${counts[sides]}`;
+      el.classList.add('active');
+    } else {
+      el.textContent = '—';
+      el.classList.remove('active');
+    }
   });
 }
 
+// ─── Advantage UI ───
 function updateAdvUI() {
-  // Only usable when there are EXACTLY 2 dice, and they are the SAME type
-  const canUse =
-    selectedDice.length === 2 &&
-    selectedDice[0] === selectedDice[1];
+  const canUse = selectedDice.length === 2 && selectedDice[0] === selectedDice[1];
 
-  // whole row muted unless eligible
-  advControl.classList.toggle("muted", !canUse);
-  advControl.setAttribute("aria-disabled", String(!canUse));
-
-  // enable checkbox only when eligible
+  advControl.setAttribute('aria-disabled', String(!canUse));
   advEnable.disabled = !canUse;
+  advMode.disabled   = !canUse || !advEnable.checked;
+  advState.textContent = advMode.checked ? 'Advantage' : 'Disadvantage';
 
-  // switch only enabled if checkbox checked AND eligible
-  advMode.disabled = !canUse || !advEnable.checked;
-
-  // label reflects switch state (adv default ON)
-  advState.textContent = advMode.checked ? "Advantage" : "Disadvantage";
-
-  // If not eligible, force reset to defaults (no surprises)
   if (!canUse) {
     advEnable.checked = false;
-    advMode.checked = true; // advantage default
-    advState.textContent = "Advantage";
+    advMode.checked   = true;
+    advState.textContent = 'Advantage';
   }
 }
 
-function syncAllUI() {
+// ─── Sync all UI ───
+function syncUI() {
   updateBonusUI();
-  updateRollBtnUI();
-  updatePlusDisabledUI();
-  updateDiceSelectorCountsUI();
+  updateRollBtn();
+  updatePlusButtons();
+  updateCountLabels();
   updateAdvUI();
 }
 
-// =========================
-// Render tray (dice DOM)
-// =========================
+// ─── Session Stats ───
+function updateStats(total, diceCount) {
+  sessionStats.totalDice += diceCount;
+  sessionStats.rollCount += 1;
+  sessionStats.totals.push(total);
+  if (sessionStats.bestRoll === null || total > sessionStats.bestRoll) {
+    sessionStats.bestRoll = total;
+  }
+
+  statTotalEl.textContent = sessionStats.totalDice;
+  statRollsEl.textContent = sessionStats.rollCount;
+  statBestEl.textContent  = sessionStats.bestRoll;
+
+  const avg = sessionStats.totals.reduce((a,b) => a+b, 0) / sessionStats.totals.length;
+  statAvgEl.textContent = avg.toFixed(1);
+}
+
+// ─── Render Tray ───
 function renderTray() {
-  diceTray.innerHTML = "";
+  // Remove existing dice elements (not the hint)
+  diceTray.querySelectorAll('.tray-die').forEach(el => el.remove());
 
   if (selectedDice.length === 0) {
-    diceTray.innerHTML = `<p class="tray-placeholder">Select dice to add them here</p>`;
-    syncAllUI();
+    trayHint.style.display = '';
+  } else {
+    trayHint.style.display = 'none';
+
+    selectedDice.forEach((sides, i) => {
+      const el = document.createElement('div');
+      el.className  = 'tray-die';
+      el.dataset.sides = String(sides);
+      el.dataset.index = String(i);
+      el.title = `Click to remove d${sides}`;
+      el.innerHTML = `
+        <span class="die-label">d${sides}</span>
+        <span class="die-result"></span>
+      `;
+      // Click to remove
+      el.addEventListener('click', () => {
+        const idx = selectedDice.indexOf(sides);
+        if (idx !== -1) {
+          selectedDice.splice(idx, 1);
+          renderTray();
+          syncUI();
+        }
+      });
+      diceTray.appendChild(el);
+    });
+  }
+
+  syncUI();
+}
+
+// ─── History ───
+function renderHistory() {
+  historyList.innerHTML = '';
+
+  if (rollHistory.length === 0) {
+    historyList.innerHTML = '<li class="history-empty">No rolls yet</li>';
     return;
   }
 
-  // Create a die element for each selected die
-  selectedDice.forEach(sides => {
-    const el = document.createElement("div");
-    el.className = "die";
-    el.dataset.sides = String(sides); // store sides on element (robust)
-
-    el.innerHTML = `
-      <span class="die-type">d${sides}</span>
-      <span class="die-value"></span>
-    `;
-
-    diceTray.appendChild(el);
-  });
-
-  syncAllUI();
-}
-
-// =========================
-// History
-// =========================
-function renderHistory() {
-  historyList.innerHTML = "";
-
-  rollHistory.forEach(entry => {
-    const li = document.createElement("li");
+  rollHistory.forEach((entry, i) => {
+    const li = document.createElement('li');
     li.textContent = entry;
     historyList.appendChild(li);
   });
 }
 
-// =========================
-// Wiring: Dice controls (+ / -)
-// =========================
-document.querySelectorAll(".dice-control").forEach(control => {
-  const sides = Number(control.dataset.die);
-  const plus = control.querySelector(".plus");
-  const minus = control.querySelector(".minus");
+// ─── Presets ───
+const PRESETS = {
+  attack:   { dice: [20], bonus: 0, label: 'Attack Roll' },
+  fireball: { dice: [6,6,6,6,6,6,6,6], bonus: 0, label: 'Fireball (8d6)' },
+  stat:     { dice: [6,6,6,6], bonus: 0, label: 'Stat Roll (4d6)' },
+  sneak:    { dice: [6,6,6], bonus: 0, label: 'Sneak Attack (3d6)' },
+};
 
-  plus.addEventListener("click", () => {
-    if (selectedDice.length >= MAX_DICE) {
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const preset = PRESETS[btn.dataset.preset];
+    if (!preset) return;
+
+    if (preset.dice.length > MAX_DICE) {
       showTrayError();
       return;
     }
+
+    selectedDice = [...preset.dice];
+    bonus = preset.bonus;
+    renderTray();
+    syncUI();
+  });
+});
+
+// ─── Dice Controls (left panel +/-) ───
+document.querySelectorAll('.die-row').forEach(row => {
+  const sides = Number(row.dataset.die);
+  const plusBtn  = row.querySelector('.plus');
+  const minusBtn = row.querySelector('.minus');
+
+  plusBtn.addEventListener('click', () => {
+    if (selectedDice.length >= MAX_DICE) { showTrayError(); return; }
     selectedDice.push(sides);
     renderTray();
   });
 
-  minus.addEventListener("click", () => {
-    const index = selectedDice.indexOf(sides);
-    if (index === -1) return;
-
-    selectedDice.splice(index, 1);
+  minusBtn.addEventListener('click', () => {
+    const idx = selectedDice.lastIndexOf(sides);
+    if (idx === -1) return;
+    selectedDice.splice(idx, 1);
     renderTray();
   });
 });
 
-// =========================
-// Bonus controls
-// =========================
-bonusPlus.addEventListener("click", () => {
-  bonus++;
-  updateBonusUI();
+// ─── Bonus Controls ───
+bonusPlus.addEventListener('click', () => { bonus++; updateBonusUI(); });
+bonusMinus.addEventListener('click', () => { bonus--; updateBonusUI(); });
+
+// ─── Clear Tray ───
+clearBtn.addEventListener('click', () => {
+  selectedDice = [];
+  renderTray();
+  resultsEl.innerHTML = '';
+  lastResult = null;
+  copyResultBtn.disabled = true;
+  syncUI();
 });
 
-bonusMinus.addEventListener("click", () => {
-  bonus--;
-  updateBonusUI();
+// ─── Clear History ───
+clearHistBtn.addEventListener('click', () => {
+  rollHistory = [];
+  renderHistory();
+  sessionStats = { totalDice: 0, rollCount: 0, bestRoll: null, totals: [] };
+  statTotalEl.textContent = '0';
+  statRollsEl.textContent = '0';
+  statBestEl.textContent  = '—';
+  statAvgEl.textContent   = '—';
 });
 
-// =========================
-// Advantage controls
-// =========================
-advEnable.addEventListener("change", () => {
-  // If turning off, reset to advantage default
+// ─── Copy Result ───
+copyResultBtn.addEventListener('click', () => {
+  if (lastResult) {
+    copyText(lastResult);
+    copyResultBtn.textContent = '✓ Copied';
+    setTimeout(() => { copyResultBtn.textContent = '⎘ Copy'; }, 1500);
+  }
+});
+
+// ─── Advantage Controls ───
+advEnable.addEventListener('change', () => {
   if (!advEnable.checked) advMode.checked = true;
   updateAdvUI();
 });
+advMode.addEventListener('change', updateAdvUI);
 
-advMode.addEventListener("change", () => {
-  updateAdvUI();
-});
-
-// =========================
-// Roll handler (fixed + complete)
-// =========================
+// ─── Roll Handler ───
 function rollDice() {
   if (selectedDice.length === 0) return;
 
   shakeTray();
+  resultsEl.innerHTML = '';
 
-  results.innerHTML = "";
+  const diceEls = [...diceTray.querySelectorAll('.tray-die')];
 
-  const diceEls = [...diceTray.querySelectorAll(".die")];
+  const advEligible = selectedDice.length === 2 && selectedDice[0] === selectedDice[1];
+  const advActive   = advEligible && advEnable.checked;
+  const isAdv       = advMode.checked;
 
-  // Determine if we are in Adv/Dis mode (and eligible)
-  const advEligible =
-    selectedDice.length === 2 &&
-    selectedDice[0] === selectedDice[1];
-
-  const advActive = advEligible && advEnable.checked;
-  const isAdvantage = advMode.checked; // true=adv, false=dis
-
-  // -------------------------
-  // ADV / DIS MODE (special math)
-  // -------------------------
+  // ── Advantage / Disadvantage Mode ──
   if (advActive) {
     const sides = selectedDice[0];
-
-    // roll each of the two dice (show both values)
     const r1 = secureRoll(sides);
     const r2 = secureRoll(sides);
+    const chosen = isAdv ? Math.max(r1, r2) : Math.min(r1, r2);
+    const total  = chosen + bonus;
 
-    const chosen = isAdvantage ? Math.max(r1, r2) : Math.min(r1, r2);
-    const total = chosen + bonus;
+    animateDice(diceEls, [r1, r2]);
 
-    // Animate both dice and reveal their individual rolls
-    diceEls.forEach((dieEl, index) => {
-      const valueEl = dieEl.querySelector(".die-value");
-      const rollVal = index === 0 ? r1 : r2;
+    const modeText = isAdv ? `Advantage — max(${r1}, ${r2}) = ${chosen}` : `Disadvantage — min(${r1}, ${r2}) = ${chosen}`;
+    appendResult(modeText, 'mode-line');
+    if (bonus !== 0) appendResult(`Modifier: ${bonus >= 0 ? '+' : ''}${bonus}`, 'bonus-line');
+    appendTotal(total, sides);
 
-      dieEl.classList.remove("show-result");
-      dieEl.classList.add("rolling");
-      valueEl.textContent = "";
+    const histEntry = buildHistoryEntry(`2×d${sides} ${isAdv?'Adv':'Dis'} (${r1},${r2})→${chosen}`, bonus, total);
+    pushHistory(histEntry);
+    updateStats(total, 2);
 
-      setTimeout(() => {
-        dieEl.classList.remove("rolling");
-        dieEl.classList.add("show-result");
-        valueEl.textContent = rollVal;
-      }, 600 + index * 80);
+    lastResult = `${modeText} | Total: ${total}`;
+    copyResultBtn.disabled = false;
+
+    logRollToSupabase({
+      dice_notation: `2×d${sides}`,
+      individual_rolls: [r1, r2],
+      bonus,
+      total,
+      mode: isAdv ? 'advantage' : 'disadvantage',
+      rolled_at: new Date().toISOString(),
     });
 
-    // Results panel (clear + explicit)
-    const modeLine = document.createElement("p");
-    modeLine.textContent = isAdvantage
-      ? `Advantage: max(${r1}, ${r2}) = ${chosen}`
-      : `Disadvantage: min(${r1}, ${r2}) = ${chosen}`;
-    results.appendChild(modeLine);
-
-    if (bonus !== 0) {
-      const bonusLine = document.createElement("p");
-      bonusLine.textContent = `Bonus → ${bonus}`;
-      results.appendChild(bonusLine);
-    }
-
-    const totalLine = document.createElement("strong");
-    totalLine.textContent = `Total: ${total}`;
-    results.appendChild(totalLine);
-
-    // History entry (cap at 10)
-    const diceText = `2×d${sides}`;
-    const modeText = isAdvantage ? "Adv" : "Dis";
-    const bonusText = bonus !== 0 ? ` | Bonus ${bonus > 0 ? "+" : ""}${bonus}` : "";
-    const historyEntry = `${diceText} | ${modeText} (${r1},${r2}) → ${chosen}${bonusText} → ${total}`;
-
-    rollHistory.unshift(historyEntry);
-    if (rollHistory.length > MAX_HISTORY) rollHistory.pop();
-    renderHistory();
-
-    return; // IMPORTANT: do not run normal tray math
+    return;
   }
 
-  // -------------------------
-  // NORMAL MODE (sum of all dice)
-  // -------------------------
-  let total = 0;
+  // ── Normal Mode ──
+  let total = bonus;
+  const rolls = [];
   const diceSummary = {};
 
-  diceEls.forEach((dieEl, index) => {
+  diceEls.forEach((dieEl, i) => {
     const sides = Number(dieEl.dataset.sides);
-
+    const roll  = secureRoll(sides);
+    rolls.push(roll);
+    total += roll;
     diceSummary[sides] = (diceSummary[sides] || 0) + 1;
 
-    const roll = secureRoll(sides);
-    total += roll;
-
-    const valueEl = dieEl.querySelector(".die-value");
-
-    dieEl.classList.remove("show-result");
-    dieEl.classList.add("rolling");
-    valueEl.textContent = "";
-
-    setTimeout(() => {
-      dieEl.classList.remove("rolling");
-      dieEl.classList.add("show-result");
-      valueEl.textContent = roll;
-    }, 600 + index * 80);
-
-    const line = document.createElement("p");
+    const line = document.createElement('p');
+    line.className   = 'result-line';
     line.textContent = `d${sides} → ${roll}`;
-    results.appendChild(line);
+    resultsEl.appendChild(line);
   });
 
-  if (bonus !== 0) {
-    const bonusLine = document.createElement("p");
-    bonusLine.textContent = `Bonus → ${bonus}`;
-    results.appendChild(bonusLine);
-    total += bonus;
+  animateDice(diceEls, rolls);
+
+  if (bonus !== 0) appendResult(`Modifier: ${bonus >= 0 ? '+' : ''}${bonus}`, 'bonus-line');
+  appendTotal(total, selectedDice.length === 1 ? selectedDice[0] : null);
+
+  const diceText = Object.entries(diceSummary).map(([s,c]) => `${c}×d${s}`).join(', ');
+  const histEntry = buildHistoryEntry(diceText, bonus, total);
+  pushHistory(histEntry);
+  updateStats(total, selectedDice.length);
+
+  lastResult = `${diceText} ${bonus !== 0 ? `+${bonus} ` : ''}→ ${total}`;
+  copyResultBtn.disabled = false;
+
+  logRollToSupabase({
+    dice_notation: diceText,
+    individual_rolls: rolls,
+    bonus,
+    total,
+    mode: 'normal',
+    rolled_at: new Date().toISOString(),
+  });
+}
+
+// ─── Dice Animation ───
+function animateDice(els, rolls) {
+  els.forEach((el, i) => {
+    const resultEl = el.querySelector('.die-result');
+    el.classList.remove('show-result', 'rolling');
+    resultEl.textContent = '';
+
+    void el.offsetWidth;
+    el.classList.add('rolling');
+
+    setTimeout(() => {
+      el.classList.remove('rolling');
+      el.classList.add('show-result');
+      resultEl.textContent = rolls[i] ?? '';
+    }, 600 + i * 80);
+  });
+}
+
+// ─── Result Helpers ───
+function appendResult(text, cls = '') {
+  const p = document.createElement('p');
+  p.className   = `result-line ${cls}`.trim();
+  p.textContent = text;
+  resultsEl.appendChild(p);
+}
+
+function appendTotal(total, sides) {
+  const el = document.createElement('div');
+  el.className = 'result-total';
+  el.textContent = `Total: ${total}`;
+
+  // Natural 20 / Natural 1 (only for single d20)
+  if (sides === 20) {
+    if (total === 20) el.classList.add('nat20');
+    if (total === 1)  el.classList.add('nat1');
   }
 
-  const totalLine = document.createElement("strong");
-  totalLine.textContent = `Total: ${total}`;
-  results.appendChild(totalLine);
+  resultsEl.appendChild(el);
+}
 
-  const diceText = Object.entries(diceSummary)
-    .map(([sides, count]) => `${count}×d${sides}`)
-    .join(", ");
+// ─── History Helpers ───
+function buildHistoryEntry(diceText, bon, total) {
+  let s = diceText;
+  if (bon !== 0) s += ` | ${bon >= 0 ? '+' : ''}${bon}`;
+  s += ` → ${total}`;
+  return s;
+}
 
-  let historyEntry = diceText;
-
-  if (bonus !== 0) {
-    historyEntry += ` | Bonus ${bonus > 0 ? "+" : ""}${bonus}`;
-  }
-
-  historyEntry += ` → ${total}`;
-
-  rollHistory.unshift(historyEntry);
+function pushHistory(entry) {
+  rollHistory.unshift(entry);
   if (rollHistory.length > MAX_HISTORY) rollHistory.pop();
   renderHistory();
 }
 
-// wire roll button
-rollBtn.addEventListener("click", rollDice);
+// ─── Wire Roll Button ───
+rollBtn.addEventListener('click', rollDice);
 
-// =========================
-// Init
-// =========================
+// ─── Keyboard shortcut (Space / Enter when not in input) ───
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault();
+    if (!rollBtn.disabled) rollDice();
+  }
+});
+
+// ─── Init ───
+initSupabase();
 renderTray();
-syncAllUI();
 renderHistory();
+syncUI();
