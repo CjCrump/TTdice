@@ -44,10 +44,16 @@
         </div>
 
         <nav class="die-rack" aria-label="Dice selector">
-          <h2 class="section-label">Select Dice</h2>
+
+          <!-- ── Dice Set Picker ── -->
+          <div class="set-picker-inline">
+            <h2 class="section-label" style="margin-bottom:0.5rem;">Select Dice</h2>
+            <div class="set-swatches" id="setSwatches"></div>
+            <p class="set-name-label" id="setNameLabel"></p>
+          </div>
 
           <div class="die-row" data-die="4">
-            <div class="die-pip d4-shape" aria-hidden="true"><span>4</span></div>
+            <div class="die-pip-svg" id="pip-4" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d4</span><span class="die-count" id="count-4">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d4">−</button>
@@ -56,7 +62,7 @@
           </div>
 
           <div class="die-row" data-die="6">
-            <div class="die-pip d6-shape" aria-hidden="true"><span>6</span></div>
+            <div class="die-pip-svg" id="pip-6" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d6</span><span class="die-count" id="count-6">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d6">−</button>
@@ -65,7 +71,7 @@
           </div>
 
           <div class="die-row" data-die="8">
-            <div class="die-pip d8-shape" aria-hidden="true"><span>8</span></div>
+            <div class="die-pip-svg" id="pip-8" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d8</span><span class="die-count" id="count-8">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d8">−</button>
@@ -74,7 +80,7 @@
           </div>
 
           <div class="die-row" data-die="10">
-            <div class="die-pip d10-shape" aria-hidden="true"><span>10</span></div>
+            <div class="die-pip-svg" id="pip-10" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d10</span><span class="die-count" id="count-10">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d10">−</button>
@@ -83,7 +89,7 @@
           </div>
 
           <div class="die-row" data-die="12">
-            <div class="die-pip d12-shape" aria-hidden="true"><span>12</span></div>
+            <div class="die-pip-svg" id="pip-12" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d12</span><span class="die-count" id="count-12">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d12">−</button>
@@ -92,7 +98,7 @@
           </div>
 
           <div class="die-row" data-die="20">
-            <div class="die-pip d20-shape" aria-hidden="true"><span>20</span></div>
+            <div class="die-pip-svg" id="pip-20" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d20</span><span class="die-count" id="count-20">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d20">−</button>
@@ -101,7 +107,7 @@
           </div>
 
           <div class="die-row" data-die="100">
-            <div class="die-pip d100-shape" aria-hidden="true"><span>%</span></div>
+            <div class="die-pip-svg" id="pip-100" aria-hidden="true"></div>
             <div class="die-info"><span class="die-name">d100</span><span class="die-count" id="count-100">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d100">−</button>

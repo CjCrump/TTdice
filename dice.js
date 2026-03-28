@@ -247,46 +247,64 @@ function animateDieResult(el, result) {
   }, 580);
 }
 
-// ─── Inject color picker into left panel ───
-function injectSetPicker() {
-  const rack = document.querySelector('.preset-rack');
-  if (!rack) return;
-
-  const savedKey = localStorage.getItem('ttdice_set') || 'forest';
-
-  const picker = document.createElement('div');
-  picker.className = 'set-picker';
-  picker.innerHTML = `
-    <h2 class="section-label">Dice Set</h2>
-    <div class="set-swatches">
-      ${Object.entries(DIE_SETS).map(([key, set]) => `
-        <button
-          class="set-swatch ${key === savedKey ? 'active' : ''}"
-          data-set="${key}"
-          title="${set.name}"
-          style="--swatch-edge: ${set.edge}; --swatch-body: ${set.body};"
-        >
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
-            <polygon points="12,2 22,20 2,20" fill="${set.body}" stroke="${set.edge}" stroke-width="1.5"/>
-            <polygon points="12,8 18,17 6,17" fill="none" stroke="${set.edge}" stroke-width="0.6" opacity="0.5"/>
-          </svg>
-        </button>`).join('')}
-    </div>
-    <p class="set-name-label" id="setNameLabel">${DIE_SETS[savedKey].name}</p>
-  `;
-
-  rack.after(picker);
-
-  picker.querySelectorAll('.set-swatch').forEach(btn => {
-    btn.addEventListener('click', () => {
-      picker.querySelectorAll('.set-swatch').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const key = btn.dataset.set;
-      document.getElementById('setNameLabel').textContent = DIE_SETS[key].name;
-      setDieSet(key);
-    });
+// ─── Render left panel pip SVGs ───
+function renderLeftPanelPips() {
+  const pipSides = [4, 6, 8, 10, 12, 20, 100];
+  pipSides.forEach(sides => {
+    const el = document.getElementById(`pip-${sides}`);
+    if (!el) return;
+    const svgFn = SVG_FNS[sides] || svgD6;
+    el.innerHTML = svgFn(activeSet, null);
   });
 }
 
-// ─── Init picker on DOM ready ───
-document.addEventListener('DOMContentLoaded', injectSetPicker);
+// ─── Wire inline set picker (rendered in app.html) ───
+function initSetPicker() {
+  const swatchContainer = document.getElementById('setSwatches');
+  const nameLabel       = document.getElementById('setNameLabel');
+  if (!swatchContainer) return;
+
+  const savedKey = localStorage.getItem('ttdice_set') || 'forest';
+
+  // Render swatches
+  swatchContainer.innerHTML = Object.entries(DIE_SETS).map(([key, set]) => `
+    <button
+      class="set-swatch ${key === savedKey ? 'active' : ''}"
+      data-set="${key}"
+      title="${set.name}"
+      style="--swatch-edge:${set.edge};--swatch-body:${set.body};"
+    >
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
+        <polygon points="12,2 22,20 2,20" fill="${set.body}" stroke="${set.edge}" stroke-width="1.5"/>
+        <polygon points="12,8 18,17 6,17" fill="none" stroke="${set.edge}" stroke-width="0.6" opacity="0.5"/>
+      </svg>
+    </button>`).join('');
+
+  if (nameLabel) nameLabel.textContent = DIE_SETS[savedKey].name;
+
+  swatchContainer.querySelectorAll('.set-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      swatchContainer.querySelectorAll('.set-swatch').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const key = btn.dataset.set;
+      if (nameLabel) nameLabel.textContent = DIE_SETS[key].name;
+      setDieSet(key);
+    });
+  });
+
+  // Render initial pips
+  renderLeftPanelPips();
+}
+
+// ─── Override setDieSet to also refresh pips ───
+const _originalSetDieSet = setDieSet;
+function setDieSet(key) {
+  if (!DIE_SETS[key]) return;
+  activeSet = DIE_SETS[key];
+  localStorage.setItem('ttdice_set', key);
+  renderLeftPanelPips();
+  if (typeof renderTray === 'function') renderTray();
+}
+
+// ─── Init on DOM ready ───
+document.addEventListener('DOMContentLoaded', initSetPicker);
