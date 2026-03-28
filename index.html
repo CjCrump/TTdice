@@ -15,7 +15,6 @@
 </head>
 <body>
 
-  <!-- Ambient background particles -->
   <div class="ambient" aria-hidden="true">
     <div class="ember e1"></div>
     <div class="ember e2"></div>
@@ -38,15 +37,18 @@
           </div>
         </header>
 
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="soloModeBtn">Solo</button>
+          <button class="mode-btn" id="tableModeBtn">Shared Table</button>
+        </div>
+
         <nav class="die-rack" aria-label="Dice selector">
           <h2 class="section-label">Select Dice</h2>
 
           <div class="die-row" data-die="4">
             <div class="die-pip d4-shape" aria-hidden="true"><span>4</span></div>
-            <div class="die-info">
-              <span class="die-name">d4</span>
-              <span class="die-count" id="count-4">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d4</span><span class="die-count" id="count-4">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d4">−</button>
               <button class="btn-round plus"  aria-label="Add d4">+</button>
@@ -55,10 +57,7 @@
 
           <div class="die-row" data-die="6">
             <div class="die-pip d6-shape" aria-hidden="true"><span>6</span></div>
-            <div class="die-info">
-              <span class="die-name">d6</span>
-              <span class="die-count" id="count-6">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d6</span><span class="die-count" id="count-6">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d6">−</button>
               <button class="btn-round plus"  aria-label="Add d6">+</button>
@@ -67,10 +66,7 @@
 
           <div class="die-row" data-die="8">
             <div class="die-pip d8-shape" aria-hidden="true"><span>8</span></div>
-            <div class="die-info">
-              <span class="die-name">d8</span>
-              <span class="die-count" id="count-8">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d8</span><span class="die-count" id="count-8">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d8">−</button>
               <button class="btn-round plus"  aria-label="Add d8">+</button>
@@ -79,10 +75,7 @@
 
           <div class="die-row" data-die="10">
             <div class="die-pip d10-shape" aria-hidden="true"><span>10</span></div>
-            <div class="die-info">
-              <span class="die-name">d10</span>
-              <span class="die-count" id="count-10">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d10</span><span class="die-count" id="count-10">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d10">−</button>
               <button class="btn-round plus"  aria-label="Add d10">+</button>
@@ -91,10 +84,7 @@
 
           <div class="die-row" data-die="12">
             <div class="die-pip d12-shape" aria-hidden="true"><span>12</span></div>
-            <div class="die-info">
-              <span class="die-name">d12</span>
-              <span class="die-count" id="count-12">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d12</span><span class="die-count" id="count-12">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d12">−</button>
               <button class="btn-round plus"  aria-label="Add d12">+</button>
@@ -103,10 +93,7 @@
 
           <div class="die-row" data-die="20">
             <div class="die-pip d20-shape" aria-hidden="true"><span>20</span></div>
-            <div class="die-info">
-              <span class="die-name">d20</span>
-              <span class="die-count" id="count-20">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d20</span><span class="die-count" id="count-20">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d20">−</button>
               <button class="btn-round plus"  aria-label="Add d20">+</button>
@@ -115,25 +102,21 @@
 
           <div class="die-row" data-die="100">
             <div class="die-pip d100-shape" aria-hidden="true"><span>%</span></div>
-            <div class="die-info">
-              <span class="die-name">d100</span>
-              <span class="die-count" id="count-100">—</span>
-            </div>
+            <div class="die-info"><span class="die-name">d100</span><span class="die-count" id="count-100">—</span></div>
             <div class="die-btns">
               <button class="btn-round minus" aria-label="Remove d100">−</button>
               <button class="btn-round plus"  aria-label="Add d100">+</button>
             </div>
           </div>
-
         </nav>
 
         <div class="preset-rack">
           <h2 class="section-label">Quick Presets</h2>
           <div class="preset-grid">
-            <button class="preset-btn" data-preset="attack"    title="Attack roll">⚔ Attack</button>
-            <button class="preset-btn" data-preset="fireball"  title="8d6 Fireball">🔥 Fireball</button>
-            <button class="preset-btn" data-preset="stat"      title="4d6 Stat roll">📊 Stat</button>
-            <button class="preset-btn" data-preset="sneak"     title="Sneak Attack 3d6">🗡 Sneak</button>
+            <button class="preset-btn" data-preset="attack"   title="Attack roll">⚔ Attack</button>
+            <button class="preset-btn" data-preset="fireball" title="8d6 Fireball">🔥 Fireball</button>
+            <button class="preset-btn" data-preset="stat"     title="4d6 Stat roll">📊 Stat</button>
+            <button class="preset-btn" data-preset="sneak"    title="Sneak Attack 3d6">🗡 Sneak</button>
           </div>
         </div>
 
@@ -149,7 +132,7 @@
     <section class="panel panel-center">
 
       <div class="tray-toolbar">
-        <span class="tray-title">Dice Tray</span>
+        <span class="tray-title" id="trayTitle">Dice Tray</span>
         <div class="tray-toolbar-actions">
           <button class="btn-ghost" id="clearBtn" title="Clear tray" disabled>✕ Clear</button>
           <button class="btn-ghost" id="copyResultBtn" title="Copy last roll" disabled>⎘ Copy</button>
@@ -160,12 +143,10 @@
         Tray full — maximum 10 dice
       </div>
 
-      <!-- The Felt Tray -->
       <div class="felt-tray" id="diceTray" role="region" aria-label="Dice tray">
         <p class="tray-hint" id="trayHint">Add dice from the left panel</p>
       </div>
 
-      <!-- Bonus -->
       <div class="control-row">
         <label class="control-label">Modifier</label>
         <div class="stepper">
@@ -175,7 +156,6 @@
         </div>
       </div>
 
-      <!-- Adv / Dis -->
       <div class="control-row adv-row" id="advControl" aria-disabled="true">
         <label class="adv-label-check">
           <input type="checkbox" id="advEnable" disabled />
@@ -183,70 +163,126 @@
         </label>
         <label class="toggle-switch" aria-label="Toggle advantage or disadvantage">
           <input type="checkbox" id="advMode" checked disabled />
-          <span class="toggle-track">
-            <span class="toggle-thumb"></span>
-          </span>
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
         </label>
         <span class="adv-state-label" id="advState">Advantage</span>
       </div>
 
-      <!-- Roll -->
       <button class="roll-btn" id="rollBtn" disabled>
         <span class="roll-btn-icon" aria-hidden="true">⬡</span>
         Roll Dice
       </button>
 
-      <!-- Results -->
       <div class="results-area" id="results" aria-live="polite" aria-label="Roll results"></div>
 
     </section>
 
-    <!-- ─── RIGHT: HISTORY + STATS ─── -->
+    <!-- ─── RIGHT PANEL: SOLO / TABLE ─── -->
     <aside class="panel panel-right">
       <div class="panel-inner">
 
-        <div class="history-header">
-          <h2 class="section-label">Roll History</h2>
-          <button class="btn-ghost btn-small" id="clearHistoryBtn">Clear</button>
-        </div>
-        <ul class="history-list" id="historyList" aria-label="Roll history">
-          <li class="history-empty">No rolls yet</li>
-        </ul>
+        <!-- ── SOLO VIEW ── -->
+        <div id="soloView">
 
-        <div class="stats-block" id="statsBlock">
-          <h2 class="section-label">Session Stats</h2>
-          <div class="stats-grid">
-            <div class="stat-cell">
-              <span class="stat-val" id="statTotal">0</span>
-              <span class="stat-lbl">Dice Rolled</span>
-            </div>
-            <div class="stat-cell">
-              <span class="stat-val" id="statRolls">0</span>
-              <span class="stat-lbl">Roll Count</span>
-            </div>
-            <div class="stat-cell">
-              <span class="stat-val" id="statBest">—</span>
-              <span class="stat-lbl">Best Roll</span>
-            </div>
-            <div class="stat-cell">
-              <span class="stat-val" id="statAvg">—</span>
-              <span class="stat-lbl">Average</span>
+          <div class="history-header">
+            <h2 class="section-label">Roll History</h2>
+            <button class="btn-ghost btn-small" id="clearHistoryBtn">Clear</button>
+          </div>
+          <ul class="history-list" id="historyList" aria-label="Roll history">
+            <li class="history-empty">No rolls yet</li>
+          </ul>
+
+          <div class="stats-block">
+            <h2 class="section-label">Session Stats</h2>
+            <div class="stats-grid">
+              <div class="stat-cell">
+                <span class="stat-val" id="statTotal">0</span>
+                <span class="stat-lbl">Dice Rolled</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-val" id="statRolls">0</span>
+                <span class="stat-lbl">Roll Count</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-val" id="statBest">—</span>
+                <span class="stat-lbl">Best Roll</span>
+              </div>
+              <div class="stat-cell">
+                <span class="stat-val" id="statAvg">—</span>
+                <span class="stat-lbl">Average</span>
+              </div>
             </div>
           </div>
+
+          <div class="sync-block">
+            <div class="sync-status">
+              <span class="sync-dot" id="syncDot"></span>
+              <span id="syncLabel">Not connected</span>
+            </div>
+            <p class="sync-sub" id="syncSub">Rolls sync to Firestore when firebase-config.js is present.</p>
+          </div>
+
         </div>
 
-        <!-- Firebase sync block -->
-        <div class="sync-block" id="syncBlock">
-          <div class="sync-status" id="syncStatus">
-            <span class="sync-dot" id="syncDot"></span>
-            <span id="syncLabel">Not connected</span>
+        <!-- ── TABLE VIEW ── -->
+        <div id="tableView" style="display:none;">
+
+          <!-- State: lobby (not yet in a table) -->
+          <div id="tableLobby">
+            <h2 class="section-label">Shared Table</h2>
+
+            <div class="lobby-name-row">
+              <input type="text" id="playerNameInput" class="lobby-input" placeholder="Your name (e.g. Aragorn)" maxlength="24" />
+            </div>
+
+            <div class="lobby-actions">
+              <button class="lobby-btn lobby-btn-create" id="createTableBtn">✦ Create Table</button>
+              <div class="lobby-divider">or join existing</div>
+              <div class="lobby-join-row">
+                <input type="text" id="tableCodeInput" class="lobby-input lobby-code-input" placeholder="Table code" maxlength="6" />
+                <button class="lobby-btn lobby-btn-join" id="joinTableBtn">Join</button>
+              </div>
+            </div>
+
+            <p class="lobby-error" id="lobbyError"></p>
           </div>
-          <p class="sync-sub">Rolls sync to Firestore when <code>firebase-config.js</code> is present.</p>
+
+          <!-- State: in a table -->
+          <div id="tableSession" style="display:none;">
+
+            <div class="table-header-row">
+              <div>
+                <h2 class="section-label">Live Table</h2>
+                <div class="table-code-display">
+                  <span id="tableCodeDisplay">——</span>
+                  <button class="btn-ghost btn-small" id="copyCodeBtn" title="Copy table code">⎘</button>
+                </div>
+              </div>
+              <button class="btn-ghost btn-small leave-btn" id="leaveTableBtn">Leave</button>
+            </div>
+
+            <!-- Players at table -->
+            <div class="players-block">
+              <h3 class="section-label">At the Table</h3>
+              <ul class="players-list" id="playersList"></ul>
+            </div>
+
+            <!-- Live feed -->
+            <div class="feed-header">
+              <h3 class="section-label">Roll Feed</h3>
+            </div>
+            <ul class="feed-list" id="feedList" aria-live="polite">
+              <li class="history-empty">Waiting for rolls…</li>
+            </ul>
+
+          </div>
+
         </div>
+        <!-- end tableView -->
 
         <footer class="app-footer">
-          <p>TTDice Standard v2.0</p>
-          <p>by <a href="#" class="footer-link">ChanceITstudio</a></p>
+          <p>TTDice v3.0</p>
+          <p>by <a href="https://chanceitstudio.com" class="footer-link">ChanceITstudio</a></p>
         </footer>
 
       </div>
@@ -254,12 +290,10 @@
 
   </main>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-
-<!-- Your config (generated by Netlify env vars) -->
-<script src="firebase-config.js" onerror="console.info('No firebase-config.js — DB disabled')"></script>
-<script src="script.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js" onerror="console.info('No firebase-config.js — DB disabled')"></script>
+  <script src="script.js"></script>
 </body>
 </html>

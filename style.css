@@ -995,3 +995,313 @@ body {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
+
+/* ═══════════════════════════════════════
+   TTDice v3 — Shared Table Styles
+═══════════════════════════════════════ */
+
+/* ─── Mode Toggle ─── */
+.mode-toggle {
+  display: flex;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.mode-btn.active {
+  background: rgba(201,168,76,0.18);
+  color: var(--gold);
+  box-shadow: 0 0 12px rgba(201,168,76,0.1);
+}
+
+.mode-btn:hover:not(.active) {
+  color: var(--parchment-dim);
+}
+
+/* ─── Lobby ─── */
+.lobby-name-row {
+  margin-bottom: 0.75rem;
+}
+
+.lobby-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: var(--radius-sm);
+  color: var(--parchment);
+  font-family: 'Crimson Pro', serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.lobby-input:focus {
+  border-color: var(--gold-dim);
+}
+
+.lobby-input::placeholder {
+  color: var(--text-dim);
+}
+
+.lobby-code-input {
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-family: 'Cinzel', serif;
+  font-size: 0.9rem;
+}
+
+.lobby-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.lobby-btn {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: var(--radius-sm);
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.lobby-btn-create {
+  background: linear-gradient(160deg, #2e5c30, #1a3d1c);
+  border-color: rgba(60,140,60,0.4);
+  color: #a8d8a8;
+}
+
+.lobby-btn-create:hover {
+  background: linear-gradient(160deg, #3a7040, #224e24);
+  box-shadow: 0 0 16px rgba(40,160,40,0.2);
+}
+
+.lobby-btn-join {
+  background: rgba(201,168,76,0.1);
+  border-color: rgba(201,168,76,0.3);
+  color: var(--gold);
+  flex-shrink: 0;
+  width: auto;
+  padding: 0.6rem 1rem;
+}
+
+.lobby-btn-join:hover {
+  background: rgba(201,168,76,0.2);
+}
+
+.lobby-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-divider {
+  text-align: center;
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  position: relative;
+}
+
+.lobby-divider::before,
+.lobby-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 28%;
+  height: 1px;
+  background: rgba(255,255,255,0.08);
+}
+
+.lobby-divider::before { left: 0; }
+.lobby-divider::after  { right: 0; }
+
+.lobby-join-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.lobby-error {
+  color: #e06060;
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.85rem;
+  text-align: center;
+  min-height: 1.2em;
+  margin-top: 0.25rem;
+}
+
+/* ─── Table Session ─── */
+.table-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.table-code-display {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.table-code-display span {
+  font-family: 'Cinzel', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 16px rgba(201,168,76,0.4);
+}
+
+.leave-btn {
+  color: #e06060;
+  border-color: rgba(224,96,96,0.25);
+}
+
+.leave-btn:hover {
+  background: rgba(224,96,96,0.1);
+  border-color: rgba(224,96,96,0.4);
+}
+
+/* ─── Players List ─── */
+.players-block {
+  margin-bottom: 0.75rem;
+}
+
+.players-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.4rem;
+}
+
+.player-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--parchment-dim);
+}
+
+.player-entry em {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.player-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4caf50;
+  flex-shrink: 0;
+  box-shadow: 0 0 5px rgba(76,175,80,0.5);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Live Feed ─── */
+.feed-header {
+  margin-bottom: 0.25rem;
+}
+
+.feed-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,168,76,0.2) transparent;
+}
+
+.feed-entry {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.65rem;
+  animation: entry-in 250ms ease;
+}
+
+.feed-player {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--gold-dim);
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 2px;
+}
+
+.feed-player.feed-nat20 {
+  color: #ffe060;
+  text-shadow: 0 0 8px rgba(255,224,96,0.5);
+}
+
+.feed-player.feed-nat1 {
+  color: #e06060;
+}
+
+.feed-detail {
+  font-family: 'Crimson Pro', serif;
+  font-size: 0.9rem;
+  color: var(--parchment-dim);
+}
+
+.feed-detail strong {
+  color: var(--parchment);
+  font-weight: 600;
+}
+
+.feed-mode {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  background: rgba(201,168,76,0.15);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 4px;
+  color: var(--gold-dim);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Mode toggle mobile fix ─── */
+@media (max-width: 900px) {
+  .mode-toggle {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  .mode-btn {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  /* Ensure table view fills right panel correctly */
+  #tableView, #soloView {
+    width: 100%;
+  }
+}
