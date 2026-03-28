@@ -57,30 +57,19 @@ const feedList          = document.getElementById('feedList');
 const MAX_DICE    = 10;
 const MAX_HISTORY = 20;
 
-// ─── Persistence ───
-function saveLocal(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
-}
-function loadLocal(key, fallback) {
-  try {
-    const v = localStorage.getItem(key);
-    return v !== null ? JSON.parse(v) : fallback;
-  } catch(e) { return fallback; }
-}
-
-// ─── State (persisted) ───
+// ─── State ───
 let selectedDice = [];
-let bonus        = loadLocal('ttdice_bonus', 0);
-let rollHistory  = loadLocal('ttdice_history', []);
+let bonus        = 0;
+let rollHistory  = [];
 let lastResult   = null;
-let appMode      = 'solo';
+let appMode      = 'solo'; // 'solo' | 'table'
 
-let sessionStats = loadLocal('ttdice_stats', {
+let sessionStats = {
   totalDice : 0,
   rollCount : 0,
   bestRoll  : null,
   totals    : [],
-});
+};
 
 // ─── Table state ───
 let tableState = {
@@ -93,18 +82,29 @@ let tableState = {
 };
 
 // ─── Firebase ───
-let db = null;
+let db   = null;
+let auth = null;
+let currentUser = null;
 
-function initFirebase() {
+async function initFirebase() {
   if (typeof window.FIREBASE_CONFIG === 'undefined') return;
   if (typeof firebase === 'undefined') return;
   try {
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    db = firebase.firestore();
+    db   = firebase.firestore();
+    auth = firebase.auth();
+
+    // Sign in anonymously — gives a stable UID per browser
+    await auth.signInAnonymously();
+    currentUser = auth.currentUser;
+
     syncDot.classList.add('connected');
     syncLabel.textContent = 'Firebase connected';
     if (syncSub) syncSub.textContent = 'Rolls are syncing to Firestore.';
-    console.info('[TTDice] Firebase connected');
+    console.info('[TTDice] Firebase connected, uid:', currentUser?.uid);
+
+    // Rejoin table if one was active before refresh
+    restoreTableSession();
   } catch (e) {
     syncDot.classList.add('error');
     syncLabel.textContent = 'Connection error';
@@ -129,8 +129,10 @@ function generateCode() {
   return code;
 }
 
-// ─── Browser ID (persists across refreshes) ───
+// ─── Player ID from Firebase anonymous auth ───
 function getPlayerId() {
+  // Use Firebase UID if available, fall back to localStorage
+  if (currentUser?.uid) return currentUser.uid;
   let id = localStorage.getItem('ttdice_player_id');
   if (!id) {
     const buf = new Uint32Array(4);
@@ -256,6 +258,9 @@ function joinSession(code, name, playerId) {
   tableCodeDisplay.textContent = code;
   trayTitle.textContent        = `Table: ${code}`;
 
+  // Persist session so refresh rejoins automatically
+  saveLocal('ttdice_table_session', { code, name, playerId });
+
   // reset lobby buttons
   createTableBtn.disabled = false;
   createTableBtn.textContent = '✦ Create Table';
@@ -338,6 +343,9 @@ async function leaveTable() {
   } catch (e) {
     console.warn('[TTDice] Leave table error:', e);
   }
+
+  // Clear persisted session
+  saveLocal('ttdice_table_session', null);
 
   // Reset state
   tableState = { active: false, code: null, playerName: null, playerId: null, unsubRolls: null, unsubPlayers: null };
@@ -496,7 +504,6 @@ function updateStats(total, diceCount) {
   statRollsEl.textContent = sessionStats.rollCount;
   statBestEl.textContent  = sessionStats.bestRoll;
   statAvgEl.textContent   = (sessionStats.totals.reduce((a, b) => a + b, 0) / sessionStats.totals.length).toFixed(1);
-  saveLocal('ttdice_stats', sessionStats);
 }
 
 // ─── Render Tray ───
@@ -574,8 +581,8 @@ document.querySelectorAll('.die-row').forEach(row => {
 });
 
 // ─── Bonus ───
-bonusPlus.addEventListener('click',  () => { bonus++; updateBonusUI(); saveLocal('ttdice_bonus', bonus); });
-bonusMinus.addEventListener('click', () => { bonus--; updateBonusUI(); saveLocal('ttdice_bonus', bonus); });
+bonusPlus.addEventListener('click',  () => { bonus++; updateBonusUI(); });
+bonusMinus.addEventListener('click', () => { bonus--; updateBonusUI(); });
 
 // ─── Clear Tray ───
 clearBtn.addEventListener('click', () => {
@@ -589,12 +596,7 @@ clearBtn.addEventListener('click', () => {
 clearHistBtn.addEventListener('click', () => {
   rollHistory  = [];
   sessionStats = { totalDice: 0, rollCount: 0, bestRoll: null, totals: [] };
-  saveLocal('ttdice_history', []);
-  saveLocal('ttdice_stats', sessionStats);
-  saveLocal('ttdice_bonus', 0);
-  bonus = 0;
   renderHistory();
-  updateBonusUI();
   statTotalEl.textContent = '0';
   statRollsEl.textContent = '0';
   statBestEl.textContent  = '—';
@@ -750,8 +752,38 @@ function buildHistoryEntry(diceText, bon, total) {
 function pushHistory(entry) {
   rollHistory.unshift(entry);
   if (rollHistory.length > MAX_HISTORY) rollHistory.pop();
-  saveLocal('ttdice_history', rollHistory);
   renderHistory();
+}
+
+// ─── Restore table session after refresh ───
+async function restoreTableSession() {
+  const saved = loadLocal('ttdice_table_session', null);
+  if (!saved || !saved.code || !db) return;
+
+  try {
+    const tableRef  = db.collection('ttdice_tables').doc(saved.code);
+    const tableSnap = await tableRef.get();
+
+    if (!tableSnap.exists || !tableSnap.data().active) {
+      // Table no longer exists — clear saved session silently
+      saveLocal('ttdice_table_session', null);
+      return;
+    }
+
+    // Re-register as active player
+    await tableRef.collection('players').doc(saved.playerId).set({
+      name     : saved.name,
+      joinedAt : firebase.firestore.FieldValue.serverTimestamp(),
+      active   : true,
+    }, { merge: true });
+
+    // Switch to table mode and rejoin
+    setMode('table');
+    joinSession(saved.code, saved.name, saved.playerId);
+  } catch (e) {
+    console.warn('[TTDice] Could not restore table session:', e);
+    saveLocal('ttdice_table_session', null);
+  }
 }
 
 // ─── Wire ───
@@ -776,12 +808,3 @@ renderTray();
 renderHistory();
 syncUI();
 setMode('solo');
-
-// Restore persisted stats UI
-if (sessionStats.rollCount > 0) {
-  statTotalEl.textContent = sessionStats.totalDice;
-  statRollsEl.textContent = sessionStats.rollCount;
-  statBestEl.textContent  = sessionStats.bestRoll;
-  const avg = sessionStats.totals.reduce((a, b) => a + b, 0) / sessionStats.totals.length;
-  statAvgEl.textContent   = avg.toFixed(1);
-}
