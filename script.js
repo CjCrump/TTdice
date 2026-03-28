@@ -514,12 +514,7 @@ function renderTray() {
   } else {
     trayHint.style.display = 'none';
     selectedDice.forEach((sides, i) => {
-      const el         = document.createElement('div');
-      el.className     = 'tray-die';
-      el.dataset.sides = String(sides);
-      el.dataset.index = String(i);
-      el.title         = `Click to remove d${sides}`;
-      el.innerHTML     = `<span class="die-label">d${sides}</span><span class="die-result"></span>`;
+      const el = buildDieElement(sides, i);
       el.addEventListener('click', () => {
         const idx = selectedDice.indexOf(sides);
         if (idx !== -1) { selectedDice.splice(idx, 1); renderTray(); syncUI(); }
@@ -711,16 +706,9 @@ function rollDice() {
 // ─── Animation ───
 function animateDice(els, rolls) {
   els.forEach((el, i) => {
-    const resultEl = el.querySelector('.die-result');
-    el.classList.remove('show-result', 'rolling');
-    resultEl.textContent = '';
-    void el.offsetWidth;
-    el.classList.add('rolling');
     setTimeout(() => {
-      el.classList.remove('rolling');
-      el.classList.add('show-result');
-      resultEl.textContent = rolls[i] ?? '';
-    }, 600 + i * 80);
+      animateDieResult(el, rolls[i]);
+    }, i * 100);
   });
 }
 
