@@ -8,9 +8,6 @@
   <meta property="og:title" content="TTDice — Digital Dice Tray" />
   <meta property="og:description" content="Free dice roller for tabletop RPGs. Cryptographically fair rolls, advantage/disadvantage, bonus modifiers." />
   <meta property="og:type" content="website" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <link rel="apple-touch-icon" href="favicon-180.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
@@ -153,6 +150,7 @@
       </div>
 
       <div class="felt-tray" id="diceTray" role="region" aria-label="Dice tray">
+        <div id="dice-box-container"></div>
         <p class="tray-hint" id="trayHint">Add dice from the left panel</p>
       </div>
 
@@ -305,6 +303,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js" onerror="console.info('No firebase-config.js — DB disabled')"></script>
+  <script src="dice.js"></script>
   <script src="script.js"></script>
   <script>
     // Auth guard — redirect to landing if not signed in

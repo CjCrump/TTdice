@@ -1,264 +1,349 @@
 /* ═══════════════════════════════════════
-   TTDice — SVG Dice Library v2
-   Unified die sets with color picker
+   TTDice — SVG Dice Library v3
+   New mathematically correct dice shapes
 ═══════════════════════════════════════ */
 
 // ─── Die Set Color Presets ───
 const DIE_SETS = {
-  forest:   { name: 'Forest',   face: '#0d1f10', body: '#1a3d1e', edge: '#c9a84c', pip: '#e8c56a', glow: 'rgba(201,168,76,0.7)'  },
-  obsidian: { name: 'Obsidian', face: '#0a0a0f', body: '#1a1a2e', edge: '#a0a8d0', pip: '#c8d0f0', glow: 'rgba(160,168,208,0.7)' },
-  blood:    { name: 'Blood',    face: '#1a0808', body: '#3a1010', edge: '#cc4444', pip: '#ff8888', glow: 'rgba(204,68,68,0.7)'    },
-  ocean:    { name: 'Ocean',    face: '#081418', body: '#0e2a38', edge: '#4aa8c8', pip: '#88d8f0', glow: 'rgba(74,168,200,0.7)'   },
-  amethyst: { name: 'Amethyst', face: '#120a18', body: '#2a1040', edge: '#9b5fd4', pip: '#c88ef0', glow: 'rgba(155,95,212,0.7)'  },
-  bone:     { name: 'Bone',     face: '#1a1810', body: '#2e2a1e', edge: '#d4c890', pip: '#f0e8b8', glow: 'rgba(212,200,144,0.7)' },
-  ember:    { name: 'Ember',    face: '#180e06', body: '#3a1e08', edge: '#e07830', pip: '#ffaa60', glow: 'rgba(224,120,48,0.7)'  },
+  forest:   { name: 'Forest',   face: '#0d1f10', body: '#1a3d1e', edge: '#c9a84c', pip: '#e8c56a', inner: '#3d7a42', glow: 'rgba(201,168,76,0.7)'  },
+  obsidian: { name: 'Obsidian', face: '#0a0a0f', body: '#1a1a2e', edge: '#a0a8d0', pip: '#c8d0f0', inner: '#5060a0', glow: 'rgba(160,168,208,0.7)' },
+  blood:    { name: 'Blood',    face: '#1a0808', body: '#3a1010', edge: '#cc4444', pip: '#ff8888', inner: '#7a2828', glow: 'rgba(204,68,68,0.7)'    },
+  ocean:    { name: 'Ocean',    face: '#081418', body: '#0e2a38', edge: '#4aa8c8', pip: '#88d8f0', inner: '#2a6880', glow: 'rgba(74,168,200,0.7)'   },
+  amethyst: { name: 'Amethyst', face: '#120a18', body: '#2a1040', edge: '#9b5fd4', pip: '#c88ef0', inner: '#5a3080', glow: 'rgba(155,95,212,0.7)'  },
+  bone:     { name: 'Bone',     face: '#1a1810', body: '#2e2a1e', edge: '#d4c890', pip: '#f0e8b8', inner: '#7a7050', glow: 'rgba(212,200,144,0.7)' },
+  ember:    { name: 'Ember',    face: '#180e06', body: '#3a1e08', edge: '#e07830', pip: '#ffaa60', inner: '#8a4818', glow: 'rgba(224,120,48,0.7)'  },
 };
 
-// ─── Active set — loaded from localStorage or default ───
 let activeSet = DIE_SETS[localStorage.getItem('ttdice_set') || 'forest'];
 
 function setDieSet(key) {
   if (!DIE_SETS[key]) return;
   activeSet = DIE_SETS[key];
   localStorage.setItem('ttdice_set', key);
-  // Re-render tray with new colors
+  renderLeftPanelPips();
   if (typeof renderTray === 'function') renderTray();
 }
 
-// ─── SVG shape builders ───
-// Each returns an SVG string given colors + optional result value
+// ─── SVG builders — new mathematically correct shapes ───
+// Each returns full SVG string. val=null shows die label, val=number shows result.
 
 function svgD4(c, val) {
-  const txt = val
-    ? `<text x="40" y="54" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="18" font-weight="700"
-        fill="${c.pip}">${val}</text>`
-    : `<text x="40" y="53" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d4</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f4"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <polygon points="40,8 72,69 8,69" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
-    <polygon points="40,8 72,69 8,69" fill="url(#g4)" stroke="${c.edge}" stroke-width="1.5"/>
-    <polygon points="40,20 62,62 18,62" fill="none" stroke="${c.edge}" stroke-width="0.6" opacity="0.35"/>
-    <line x1="40" y1="8" x2="40" y2="20" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <line x1="72" y1="69" x2="62" y2="62" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <line x1="8" y1="69" x2="18" y2="62" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <g filter="url(#f4)">${txt}</g>
+  const label = val !== null && val !== undefined ? val : 'd4';
+  return `<svg viewBox="-58 -58 116 116" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <g transform="rotate(-8)">
+      <polygon points="10,-48 50,10 5,52 -50,8" fill="rgba(0,0,0,0.45)" transform="translate(3,4)"/>
+      <polygon points="10,-48 5,52 -50,8" fill="${c.face}" stroke="none"/>
+      <polygon points="10,-48 50,10 5,52" fill="${c.body}" stroke="none"/>
+      <line x1="10" y1="-48" x2="5" y2="52" stroke="${c.inner}" stroke-width="1.8"/>
+      <polygon points="10,-48 50,10 5,52 -50,8" fill="none" stroke="${c.edge}" stroke-width="3" stroke-linejoin="round"/>
+      <text x="22" y="6" text-anchor="middle" dominant-baseline="central"
+        font-family="Georgia,serif" font-size="26" font-weight="900" fill="${c.pip}">${label}</text>
+    </g>
   </svg>`;
 }
 
 function svgD6(c, val) {
-  const pipPos = {
-    1: [[40,40]],
-    2: [[26,26],[54,54]],
-    3: [[26,26],[40,40],[54,54]],
-    4: [[26,26],[54,26],[26,54],[54,54]],
-    5: [[26,26],[54,26],[40,40],[26,54],[54,54]],
-    6: [[26,22],[54,22],[26,40],[54,40],[26,58],[54,58]],
-  };
-  const inner = val && pipPos[val]
-    ? `<g filter="url(#f6)">${pipPos[val].map(([x,y]) =>
-        `<circle cx="${x}" cy="${y}" r="4.5" fill="${c.pip}"/>`).join('')}</g>`
-    : `<text x="40" y="42" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d6</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g6" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f6"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <rect x="9" y="9" width="62" height="62" rx="9" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
-    <rect x="9" y="9" width="62" height="62" rx="9" fill="url(#g6)" stroke="${c.edge}" stroke-width="1.5"/>
-    <rect x="14" y="14" width="52" height="52" rx="6" fill="none" stroke="${c.edge}" stroke-width="0.5" opacity="0.25"/>
-    ${inner}
+  const label = val !== null && val !== undefined ? val : 'd6';
+  return `<svg viewBox="-55 -55 110 110" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <polygon points="0,-46 40,-23 40,23 0,46 -40,23 -40,-23" fill="rgba(0,0,0,0.45)" transform="translate(3,4)"/>
+    <polygon points="0,-46 40,-23 0,0 -40,-23" fill="${c.face}" stroke="none"/>
+    <polygon points="40,-23 0,0 0,46 40,23"    fill="${c.face}" stroke="none"/>
+    <polygon points="-40,-23 0,0 0,46 -40,23"  fill="${c.body}" stroke="none"/>
+    <line x1="0" y1="0" x2="40"  y2="-23" stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="0" y1="0" x2="-40" y2="-23" stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="0" y1="0" x2="0"   y2="46"  stroke="${c.inner}" stroke-width="1.8"/>
+    <polygon points="0,-46 40,-23 40,23 0,46 -40,23 -40,-23" fill="none" stroke="${c.edge}" stroke-width="3" stroke-linejoin="round"/>
+    <text x="-20" y="11" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="26" font-weight="900" fill="${c.pip}">${label}</text>
   </svg>`;
 }
 
 function svgD8(c, val) {
-  const txt = val
-    ? `<text x="40" y="44" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="${val>9?'18':'22'}" font-weight="700"
-        fill="${c.pip}">${val}</text>`
-    : `<text x="40" y="44" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d8</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g8" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f8"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <polygon points="40,5 70,22 74,52 56,73 24,73 6,52 10,22" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
-    <polygon points="40,5 70,22 74,52 56,73 24,73 6,52 10,22" fill="url(#g8)" stroke="${c.edge}" stroke-width="1.5"/>
-    <polygon points="40,14 62,27 65,50 51,66 29,66 15,50 18,27" fill="none" stroke="${c.edge}" stroke-width="0.5" opacity="0.25"/>
-    <line x1="6" y1="52" x2="74" y2="52" stroke="${c.edge}" stroke-width="0.4" opacity="0.2"/>
-    <g filter="url(#f8)">${txt}</g>
+  const label = val !== null && val !== undefined ? val : 'd8';
+  return `<svg viewBox="-52 -58 104 116" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <polygon points="0,-52 40,-18 40,18 0,52 -40,18 -40,-18" fill="rgba(0,0,0,0.45)" transform="translate(3,4)"/>
+    <polygon points="0,-52 -40,-18 40,-18"  fill="${c.face}" stroke="none"/>
+    <polygon points="-40,-18 -40,18 0,52"   fill="${c.face}" stroke="none"/>
+    <polygon points="40,-18 40,18 0,52"     fill="${c.face}" stroke="none"/>
+    <polygon points="-40,-18 40,-18 0,52"   fill="${c.body}" stroke="none"/>
+    <polygon points="-40,-18 -40,18 0,52"   fill="${c.face}" stroke="none"/>
+    <polygon points="40,-18 40,18 0,52"     fill="${c.face}" stroke="none"/>
+    <line x1="-40" y1="-18" x2="40"  y2="-18" stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="-40" y1="-18" x2="0"   y2="52"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="40"  y1="-18" x2="0"   y2="52"  stroke="${c.inner}" stroke-width="1.8"/>
+    <polygon points="0,-52 40,-18 40,18 0,52 -40,18 -40,-18" fill="none" stroke="${c.edge}" stroke-width="3" stroke-linejoin="round"/>
+    <text x="0" y="8" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="26" font-weight="900" fill="${c.pip}">${label}</text>
   </svg>`;
 }
 
 function svgD10(c, val) {
-  const txt = val
-    ? `<text x="40" y="47" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="${val>9?'18':'22'}" font-weight="700"
-        fill="${c.pip}">${val}</text>`
-    : `<text x="40" y="47" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d10</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g10" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f10"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <polygon points="40,4 74,34 62,74 18,74 6,34" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
-    <polygon points="40,4 74,34 62,74 18,74 6,34" fill="url(#g10)" stroke="${c.edge}" stroke-width="1.5"/>
-    <polygon points="40,14 66,36 56,67 24,67 14,36" fill="none" stroke="${c.edge}" stroke-width="0.5" opacity="0.25"/>
-    <line x1="40" y1="4" x2="40" y2="14" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <g filter="url(#f10)">${txt}</g>
+  const label = val !== null && val !== undefined ? val : 'd10';
+  return `<svg viewBox="-52 -58 104 116" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <polygon points="0,-54 44,0 0,54 -44,0" fill="rgba(0,0,0,0.45)" transform="translate(3,4)"/>
+    <polygon points="0,-54 -24,0 0,10 24,0"  fill="${c.body}" stroke="none"/>
+    <polygon points="0,-54 -44,0 -24,0"      fill="${c.face}" stroke="none"/>
+    <polygon points="0,-54 44,0 24,0"        fill="${c.face}" stroke="none"/>
+    <polygon points="-44,0 0,54 0,10 -24,0" fill="${c.face}" stroke="none"/>
+    <polygon points="44,0 0,54 0,10 24,0"   fill="${c.face}" stroke="none"/>
+    <line x1="0"   y1="-54" x2="-24" y2="0"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="0"   y1="-54" x2="24"  y2="0"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="-24" y1="0"   x2="0"   y2="10" stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="24"  y1="0"   x2="0"   y2="10" stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="-44" y1="0"   x2="-24" y2="0"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="44"  y1="0"   x2="24"  y2="0"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="0"   y1="10"  x2="0"   y2="54" stroke="${c.inner}" stroke-width="1.8"/>
+    <polygon points="0,-54 44,0 0,54 -44,0" fill="none" stroke="${c.edge}" stroke-width="3" stroke-linejoin="round"/>
+    <text x="0" y="-16" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="22" font-weight="900" fill="${c.pip}">${label}</text>
   </svg>`;
 }
 
 function svgD12(c, val) {
-  const txt = val
-    ? `<text x="40" y="42" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="${val>9?'19':'23'}" font-weight="700"
-        fill="${c.pip}">${val}</text>`
-    : `<text x="40" y="42" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d12</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g12" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f12"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <polygon points="40,5 66,14 76,40 66,66 40,75 14,66 4,40 14,14" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
-    <polygon points="40,5 66,14 76,40 66,66 40,75 14,66 4,40 14,14" fill="url(#g12)" stroke="${c.edge}" stroke-width="1.5"/>
-    <polygon points="40,14 60,21 68,40 60,59 40,66 20,59 12,40 20,21" fill="none" stroke="${c.edge}" stroke-width="0.5" opacity="0.25"/>
-    <g filter="url(#f12)">${txt}</g>
+  const label = val !== null && val !== undefined ? val : 'd12';
+  return `<svg viewBox="-55 -55 110 110" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <polygon points="0,-48 45.6,-14.8 28.2,38.8 -28.2,38.8 -45.6,-14.8" fill="rgba(0,0,0,0.45)" transform="translate(3,4)"/>
+    <polygon points="0,-48 45.6,-14.8 22.8,-7.4 0,-24 -22.8,-7.4 -45.6,-14.8" fill="${c.face}" stroke="none"/>
+    <polygon points="45.6,-14.8 28.2,38.8 14.1,19.4 22.8,-7.4"  fill="${c.face}" stroke="none"/>
+    <polygon points="28.2,38.8 -28.2,38.8 -14.1,19.4 0,6 14.1,19.4" fill="${c.face}" stroke="none"/>
+    <polygon points="-28.2,38.8 -45.6,-14.8 -22.8,-7.4 -14.1,19.4" fill="${c.face}" stroke="none"/>
+    <polygon points="0,-24 22.8,-7.4 14.1,19.4 -14.1,19.4 -22.8,-7.4" fill="${c.body}" stroke="none"/>
+    <line x1="0"     y1="-48"   x2="0"     y2="-24"   stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="45.6"  y1="-14.8" x2="22.8"  y2="-7.4"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="28.2"  y1="38.8"  x2="14.1"  y2="19.4"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="-28.2" y1="38.8"  x2="-14.1" y2="19.4"  stroke="${c.inner}" stroke-width="1.8"/>
+    <line x1="-45.6" y1="-14.8" x2="-22.8" y2="-7.4"  stroke="${c.inner}" stroke-width="1.8"/>
+    <polygon points="0,-24 22.8,-7.4 14.1,19.4 -14.1,19.4 -22.8,-7.4"
+      fill="none" stroke="${c.inner}" stroke-width="1.8" stroke-linejoin="round"/>
+    <polygon points="0,-48 45.6,-14.8 28.2,38.8 -28.2,38.8 -45.6,-14.8"
+      fill="none" stroke="${c.edge}" stroke-width="3" stroke-linejoin="round"/>
+    <text x="0" y="4" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="20" font-weight="900" fill="${c.pip}">${label}</text>
   </svg>`;
 }
 
 function svgD20(c, val) {
-  const isNat20 = val === 20;
-  const isNat1  = val === 1;
-  const pipColor = isNat20 ? '#ffe060' : isNat1 ? '#ff6060' : c.pip;
-  const txt = val
-    ? `<text x="40" y="52" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="${val>9?'19':'23'}" font-weight="700"
-        fill="${pipColor}">${val}</text>`
-    : `<text x="40" y="52" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d20</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g20" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f20"><feGaussianBlur stdDeviation="${isNat20?'4':'2.5'}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <polygon points="40,5 76,68 4,68" fill="rgba(0,0,0,0.5)" transform="translate(2,3)"/>
-    <polygon points="40,5 76,68 4,68" fill="url(#g20)" stroke="${c.edge}" stroke-width="1.8"/>
-    <polygon points="40,26 60,62 20,62" fill="none" stroke="${c.edge}" stroke-width="0.8" opacity="0.4"/>
-    <line x1="40" y1="5"  x2="40" y2="26" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <line x1="76" y1="68" x2="60" y2="62" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <line x1="4"  y1="68" x2="20" y2="62" stroke="${c.edge}" stroke-width="0.5" opacity="0.3"/>
-    <g filter="url(#f20)">${txt}</g>
+  const label = val !== null && val !== undefined ? val : 'd20';
+  const pipColor = val === 20 ? '#ffe060' : val === 1 ? '#ff6060' : c.pip;
+  return `<svg viewBox="-55 -55 110 110" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <polygon points="0,-48 41.6,-24 41.6,24 0,48 -41.6,24 -41.6,-24" fill="rgba(0,0,0,0.45)" transform="translate(3,4)"/>
+    <polygon points="0,-48 -41.6,-24 0,-20"  fill="${c.face}" stroke="none"/>
+    <polygon points="0,-48 41.6,-24 0,-20"   fill="${c.face}" stroke="none"/>
+    <polygon points="41.6,-24 41.6,24 22,14" fill="${c.face}" stroke="none"/>
+    <polygon points="41.6,-24 0,-20 22,14"   fill="${c.face}" stroke="none"/>
+    <polygon points="-41.6,-24 0,-20 -22,14" fill="${c.face}" stroke="none"/>
+    <polygon points="-41.6,-24 -41.6,24 -22,14" fill="${c.face}" stroke="none"/>
+    <polygon points="41.6,24 0,48 22,14"     fill="${c.face}" stroke="none"/>
+    <polygon points="-41.6,24 0,48 -22,14"  fill="${c.face}" stroke="none"/>
+    <polygon points="0,48 22,14 -22,14"      fill="${c.face}" stroke="none"/>
+    <polygon points="0,-20 22,14 -22,14"     fill="${c.body}" stroke="none"/>
+    <line x1="0"     y1="-48" x2="0"     y2="-20" stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="41.6"  y1="-24" x2="0"     y2="-20" stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="-41.6" y1="-24" x2="0"     y2="-20" stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="41.6"  y1="-24" x2="22"    y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="41.6"  y1="24"  x2="22"    y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="-41.6" y1="-24" x2="-22"   y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="-41.6" y1="24"  x2="-22"   y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="0"     y1="48"  x2="22"    y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="0"     y1="48"  x2="-22"   y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="0"     y1="-20" x2="22"    y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="0"     y1="-20" x2="-22"   y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <line x1="22"    y1="14"  x2="-22"   y2="14"  stroke="${c.inner}" stroke-width="1.5"/>
+    <polygon points="0,-48 41.6,-24 41.6,24 0,48 -41.6,24 -41.6,-24"
+      fill="none" stroke="${c.edge}" stroke-width="3" stroke-linejoin="round"/>
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="18" font-weight="900" fill="${pipColor}">${label}</text>
   </svg>`;
 }
 
 function svgD100(c, val) {
-  const txt = val
-    ? `<text x="40" y="41" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="${val===100?'13':val>9?'18':'22'}" font-weight="700"
-        fill="${c.pip}">${val}</text>`
-    : `<text x="40" y="41" text-anchor="middle" dominant-baseline="central"
-        font-family="'Cinzel',serif" font-size="10" font-weight="600"
-        fill="${c.edge}" opacity="0.85" letter-spacing="1">d%</text>`;
-  return `<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="g100" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stop-color="${c.body}"/>
-        <stop offset="100%" stop-color="${c.face}"/>
-      </linearGradient>
-      <filter id="f100"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    </defs>
-    <circle cx="42" cy="43" r="32" fill="rgba(0,0,0,0.5)"/>
-    <circle cx="40" cy="40" r="32" fill="url(#g100)" stroke="${c.edge}" stroke-width="1.5"/>
-    <circle cx="40" cy="40" r="25" fill="none" stroke="${c.edge}" stroke-width="0.6" opacity="0.3"/>
-    <circle cx="40" cy="40" r="16" fill="none" stroke="${c.edge}" stroke-width="0.4" opacity="0.15"/>
-    <g filter="url(#f100)">${txt}</g>
+  // Two d10 shapes side by side
+  const tens = val !== null && val !== undefined ? (val === 100 ? '00' : String(Math.floor((val-1)/10)*10+10).padStart(2,'0')) : 'd%';
+  const ones = val !== null && val !== undefined ? (val === 100 ? '00' : String(val % 10 === 0 ? 10 : val % 10)) : '';
+  const result = val !== null && val !== undefined ? val : '';
+
+  const d10shape = (label) => `
+    <polygon points="0,-38 31,0 0,38 -31,0" fill="rgba(0,0,0,0.45)" transform="translate(2,3)"/>
+    <polygon points="0,-38 -17,0 0,7 17,0"  fill="${c.body}" stroke="none"/>
+    <polygon points="0,-38 -31,0 -17,0"     fill="${c.face}" stroke="none"/>
+    <polygon points="0,-38 31,0 17,0"       fill="${c.face}" stroke="none"/>
+    <polygon points="-31,0 0,38 0,7 -17,0" fill="${c.face}" stroke="none"/>
+    <polygon points="31,0 0,38 0,7 17,0"   fill="${c.face}" stroke="none"/>
+    <line x1="0"   y1="-38" x2="-17" y2="0"  stroke="${c.inner}" stroke-width="1.4"/>
+    <line x1="0"   y1="-38" x2="17"  y2="0"  stroke="${c.inner}" stroke-width="1.4"/>
+    <line x1="-17" y1="0"   x2="0"   y2="7"  stroke="${c.inner}" stroke-width="1.4"/>
+    <line x1="17"  y1="0"   x2="0"   y2="7"  stroke="${c.inner}" stroke-width="1.4"/>
+    <line x1="-31" y1="0"   x2="-17" y2="0"  stroke="${c.inner}" stroke-width="1.4"/>
+    <line x1="31"  y1="0"   x2="17"  y2="0"  stroke="${c.inner}" stroke-width="1.4"/>
+    <line x1="0"   y1="7"   x2="0"   y2="38" stroke="${c.inner}" stroke-width="1.4"/>
+    <polygon points="0,-38 31,0 0,38 -31,0" fill="none" stroke="${c.edge}" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="0" y="-11" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="12" font-weight="900" fill="${c.pip}">${label}</text>`;
+
+  return `<svg viewBox="-90 -45 180 90" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+    <g transform="translate(-44,0)">${d10shape(tens)}</g>
+    <text x="0" y="0" text-anchor="middle" dominant-baseline="central"
+      font-family="Georgia,serif" font-size="16" font-weight="900" fill="${c.pip}">${result}</text>
+    <g transform="translate(44,0)">${d10shape(ones)}</g>
   </svg>`;
 }
 
 const SVG_FNS = { 4: svgD4, 6: svgD6, 8: svgD8, 10: svgD10, 12: svgD12, 20: svgD20, 100: svgD100 };
 
-// ─── Build a tray die element ───
+// ─── Build tray die element ───
 function buildDieElement(sides, index) {
   const el = document.createElement('div');
   el.className     = 'tray-die';
   el.dataset.sides = String(sides);
   el.dataset.index = String(index);
   el.title         = `Click to remove d${sides}`;
-  el.innerHTML = `
-    <div class="die-svg-wrap die-face">${(SVG_FNS[sides] || svgD6)(activeSet, null)}</div>
-    <div class="die-svg-wrap die-result-face" style="display:none;"></div>
-  `;
+  el.innerHTML = `<div class="die-svg-wrap">${(SVG_FNS[sides] || svgD20)(activeSet, null)}</div>`;
   return el;
 }
 
-// ─── Animate roll + reveal ───
-function animateDieResult(el, result) {
-  const sides   = Number(el.dataset.sides);
-  const face    = el.querySelector('.die-face');
-  const resFace = el.querySelector('.die-result-face');
-  const svgFn   = SVG_FNS[sides] || svgD6;
+// ─── Tray physics animation ───
+let animationState = null;
 
-  resFace.innerHTML = svgFn(activeSet, result);
+function animateTray(diceEls, results, onComplete) {
+  const tray = document.getElementById('diceTray');
+  if (!tray || !diceEls.length) { onComplete && onComplete(); return; }
 
-  el.classList.remove('die-rolling', 'die-landed', 'die-nat20', 'die-nat1');
-  void el.offsetWidth;
-  el.classList.add('die-rolling');
+  const trayRect = tray.getBoundingClientRect();
+  const dieSize  = 72;
+  const padding  = 8;
+  const W = tray.clientWidth;
+  const H = tray.clientHeight;
 
-  setTimeout(() => {
-    face.style.display    = 'none';
-    resFace.style.display = '';
-    el.classList.remove('die-rolling');
-    el.classList.add('die-landed');
-    if (sides === 20 && result === 20) el.classList.add('die-nat20');
-    if (sides === 20 && result === 1)  el.classList.add('die-nat1');
-  }, 580);
+  // Build physics state for each die
+  const dice = diceEls.map((el, i) => {
+    const sides = Number(el.dataset.sides);
+    return {
+      el, sides,
+      result: results[i],
+      x: padding + Math.random() * (W - dieSize - padding*2),
+      y: padding + Math.random() * (H - dieSize - padding*2),
+      vx: (Math.random() - 0.5) * 12,
+      vy: (Math.random() - 0.5) * 12,
+      angle: Math.random() * 360,
+      spin: (Math.random() - 0.5) * 20,
+    };
+  });
+
+  // Switch tray to relative positioning for absolute die placement
+  diceEls.forEach((el, i) => {
+    el.style.position = 'absolute';
+    el.style.width    = dieSize + 'px';
+    el.style.height   = dieSize + 'px';
+    el.style.left     = dice[i].x + 'px';
+    el.style.top      = dice[i].y + 'px';
+    el.style.transform = `rotate(${dice[i].angle}deg)`;
+    el.style.transition = 'none';
+  });
+
+  const startTime = performance.now();
+  const duration  = 1600;
+  let flickerInterval = null;
+  const flickerSides = [4,6,8,10,12,20];
+
+  // Flicker numbers during roll
+  flickerInterval = setInterval(() => {
+    diceEls.forEach((el, i) => {
+      const sides = dice[i].sides;
+      const fakeVal = Math.floor(Math.random() * sides) + 1;
+      el.querySelector('.die-svg-wrap').innerHTML =
+        (SVG_FNS[sides] || svgD20)(activeSet, fakeVal);
+    });
+  }, 80);
+
+  function frame(now) {
+    const elapsed  = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out — slow down over time
+    const speed = 1 - Math.pow(progress, 2);
+
+    dice.forEach((d, i) => {
+      d.x += d.vx * speed;
+      d.y += d.vy * speed;
+      d.angle += d.spin * speed;
+
+      // Bounce off walls
+      if (d.x < padding)           { d.x = padding;           d.vx = Math.abs(d.vx); }
+      if (d.x > W - dieSize - padding) { d.x = W - dieSize - padding; d.vx = -Math.abs(d.vx); }
+      if (d.y < padding)           { d.y = padding;           d.vy = Math.abs(d.vy); }
+      if (d.y > H - dieSize - padding) { d.y = H - dieSize - padding; d.vy = -Math.abs(d.vy); }
+
+      d.el.style.left      = d.x + 'px';
+      d.el.style.top       = d.y + 'px';
+      d.el.style.transform = `rotate(${d.angle}deg)`;
+    });
+
+    // Slow flicker as settling
+    if (progress > 0.7 && flickerInterval) {
+      clearInterval(flickerInterval);
+      flickerInterval = null;
+      flickerInterval = setInterval(() => {
+        diceEls.forEach((el, i) => {
+          const sides = dice[i].sides;
+          const fakeVal = Math.floor(Math.random() * sides) + 1;
+          el.querySelector('.die-svg-wrap').innerHTML =
+            (SVG_FNS[sides] || svgD20)(activeSet, fakeVal);
+        });
+      }, 180);
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      // Settle — show results, reset to centered layout
+      clearInterval(flickerInterval);
+
+      // Animate to final centered positions
+      diceEls.forEach((el, i) => {
+        el.style.transition = 'all 0.3s ease-out';
+        el.style.transform  = 'rotate(0deg)';
+      });
+
+      setTimeout(() => {
+        // Show results
+        diceEls.forEach((el, i) => {
+          const sides = dice[i].sides;
+          el.querySelector('.die-svg-wrap').innerHTML =
+            (SVG_FNS[sides] || svgD20)(activeSet, dice[i].result);
+          el.classList.add('die-landed');
+          if (sides === 20 && dice[i].result === 20) el.classList.add('die-nat20');
+          if (sides === 20 && dice[i].result === 1)  el.classList.add('die-nat1');
+        });
+
+        // Reset to flow layout
+        setTimeout(() => {
+          diceEls.forEach(el => {
+            el.style.position  = '';
+            el.style.left      = '';
+            el.style.top       = '';
+            el.style.width     = '';
+            el.style.height    = '';
+            el.style.transition = '';
+            el.style.transform = '';
+          });
+          onComplete && onComplete();
+        }, 350);
+      }, 100);
+    }
+  }
+
+  requestAnimationFrame(frame);
 }
 
-// ─── Render left panel pip SVGs ───
+// ─── Render left panel pips ───
 function renderLeftPanelPips() {
-  const pipSides = [4, 6, 8, 10, 12, 20, 100];
-  pipSides.forEach(sides => {
+  [4, 6, 8, 10, 12, 20, 100].forEach(sides => {
     const el = document.getElementById(`pip-${sides}`);
     if (!el) return;
-    const svgFn = SVG_FNS[sides] || svgD6;
-    el.innerHTML = svgFn(activeSet, null);
+    el.innerHTML = (SVG_FNS[sides] || svgD20)(activeSet, null);
   });
 }
 
-// ─── Wire inline set picker (rendered in app.html) ───
+// ─── Set picker ───
 function initSetPicker() {
   const swatchContainer = document.getElementById('setSwatches');
   const nameLabel       = document.getElementById('setNameLabel');
@@ -266,7 +351,6 @@ function initSetPicker() {
 
   const savedKey = localStorage.getItem('ttdice_set') || 'forest';
 
-  // Render swatches
   swatchContainer.innerHTML = Object.entries(DIE_SETS).map(([key, set]) => `
     <button
       class="set-swatch ${key === savedKey ? 'active' : ''}"
@@ -274,9 +358,9 @@ function initSetPicker() {
       title="${set.name}"
       style="--swatch-edge:${set.edge};--swatch-body:${set.body};"
     >
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-        <polygon points="12,2 22,20 2,20" fill="${set.body}" stroke="${set.edge}" stroke-width="1.5"/>
-        <polygon points="12,8 18,17 6,17" fill="none" stroke="${set.edge}" stroke-width="0.6" opacity="0.5"/>
+      <svg viewBox="-55 -55 110 110" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+        <polygon points="0,-48 41.6,-24 41.6,24 0,48 -41.6,24 -41.6,-24" fill="${set.body}" stroke="${set.edge}" stroke-width="4"/>
+        <polygon points="0,-20 22,14 -22,14" fill="${set.body}" stroke="${set.inner}" stroke-width="2"/>
       </svg>
     </button>`).join('');
 
@@ -292,19 +376,7 @@ function initSetPicker() {
     });
   });
 
-  // Render initial pips
   renderLeftPanelPips();
 }
 
-// ─── Override setDieSet to also refresh pips ───
-const _originalSetDieSet = setDieSet;
-function setDieSet(key) {
-  if (!DIE_SETS[key]) return;
-  activeSet = DIE_SETS[key];
-  localStorage.setItem('ttdice_set', key);
-  renderLeftPanelPips();
-  if (typeof renderTray === 'function') renderTray();
-}
-
-// ─── Init on DOM ready ───
 document.addEventListener('DOMContentLoaded', initSetPicker);
