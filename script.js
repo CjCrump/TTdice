@@ -82,35 +82,35 @@ let tableState = {
 };
 
 // ─── Firebase ───
-let db   = null;
-let auth = null;
+let db          = null;
 let currentUser = null;
 
-async function initFirebase() {
+function initFirebase() {
   if (typeof window.FIREBASE_CONFIG === 'undefined') return;
   if (typeof firebase === 'undefined') return;
   try {
     firebase.initializeApp(window.FIREBASE_CONFIG);
-    db   = firebase.firestore();
-    auth = firebase.auth();
-
-    // Sign in anonymously — gives a stable UID per browser
-    await auth.signInAnonymously();
-    currentUser = auth.currentUser;
-
+    db = firebase.firestore();
     syncDot.classList.add('connected');
     syncLabel.textContent = 'Firebase connected';
     if (syncSub) syncSub.textContent = 'Rolls are syncing to Firestore.';
-    console.info('[TTDice] Firebase connected, uid:', currentUser?.uid);
-
-    // Rejoin table if one was active before refresh
-    restoreTableSession();
+    console.info('[TTDice] Firebase ready');
   } catch (e) {
     syncDot.classList.add('error');
     syncLabel.textContent = 'Connection error';
     console.warn('[TTDice] Firebase init failed:', e);
   }
 }
+
+// Called by auth guard in app.html once user is confirmed signed in
+window.onAuthUser = function(user) {
+  currentUser = user;
+  console.info('[TTDice] Signed in:', user.uid, user.displayName);
+  if (user.displayName && playerNameInput) {
+    playerNameInput.value = user.displayName;
+  }
+  restoreTableSession();
+};
 
 // ─── RNG ───
 function secureRoll(sides) {
