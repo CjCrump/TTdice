@@ -3,15 +3,777 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTDice — Digital Dice Tray</title>
-  <meta name="description" content="A free, cryptographically fair digital dice tray for tabletop RPGs. D&D, Pathfinder, any system." />
+  <title>TTDice — Digital Dice Tray for Tabletop RPGs</title>
+  <meta name="description" content="A free, cryptographically fair digital dice tray for D&D, Pathfinder, and any tabletop RPG. Roll together in real time with your whole table." />
   <meta property="og:title" content="TTDice — Digital Dice Tray" />
-  <meta property="og:description" content="Free dice roller for tabletop RPGs. Cryptographically fair rolls, advantage/disadvantage, bonus modifiers." />
+  <meta property="og:description" content="Free dice roller for tabletop RPGs. Fair rolls, shared tables, roll history that actually persists." />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:          #c9a84c;
+      --gold-dim:      #8b6d2a;
+      --gold-bright:   #e8c56a;
+      --parchment:     #e8dfc8;
+      --parchment-dim: #b8ad96;
+      --text-muted:    #8a8070;
+      --text-dim:      #5a5448;
+      --panel-bg:      rgba(10, 14, 11, 0.88);
+      --panel-border:  rgba(201,168,76,0.2);
+      --green-dark:    #0f1a12;
+      --radius-sm:     8px;
+      --radius-md:     14px;
+      --radius-lg:     24px;
+      --transition:    180ms cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: #060a07;
+      background-image:
+        radial-gradient(ellipse 100% 50% at 50% 0%, rgba(30,58,32,0.55) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 90% 80%, rgba(122,31,31,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 10% 60%, rgba(40,20,80,0.12) 0%, transparent 60%);
+      font-family: 'Crimson Pro', Georgia, serif;
+      color: var(--parchment);
+      overflow-x: hidden;
+    }
+
+    /* ─── Ambient ─── */
+    .ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .ember { position: absolute; width: 3px; height: 3px; background: var(--gold); border-radius: 50%; opacity: 0; box-shadow: 0 0 6px 2px rgba(201,168,76,0.4); animation: float-up 12s ease-in-out infinite; }
+    .e1 { left: 8%;  bottom: -10px; animation-delay: 0s;   animation-duration: 14s; }
+    .e2 { left: 25%; bottom: -10px; animation-delay: 3s;   animation-duration: 11s; width: 2px; height: 2px; }
+    .e3 { left: 48%; bottom: -10px; animation-delay: 7s;   animation-duration: 16s; }
+    .e4 { left: 70%; bottom: -10px; animation-delay: 1.5s; animation-duration: 13s; width: 2px; height: 2px; }
+    .e5 { left: 88%; bottom: -10px; animation-delay: 5s;   animation-duration: 10s; }
+    @keyframes float-up {
+      0%   { transform: translateY(0) translateX(0);  opacity: 0; }
+      10%  { opacity: 0.8; }
+      80%  { opacity: 0.3; }
+      100% { transform: translateY(-100vh) translateX(30px); opacity: 0; }
+    }
+
+    /* ─── Nav ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(6,10,7,0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(201,168,76,0.1);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      text-decoration: none;
+    }
+
+    .nav-icon {
+      font-size: 1.4rem;
+      color: var(--gold);
+      filter: drop-shadow(0 0 6px rgba(201,168,76,0.5));
+      animation: pulse 4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(201,168,76,0.4)); }
+      50%       { filter: drop-shadow(0 0 14px rgba(201,168,76,0.7)); }
+    }
+
+    .nav-name {
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+    }
+
+    .nav-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+    .nav-link {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      transition: color var(--transition);
+    }
+    .nav-link:hover { color: var(--parchment-dim); }
+
+    .nav-cta {
+      padding: 0.45rem 1rem;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 999px;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .nav-cta:hover { background: rgba(201,168,76,0.22); border-color: var(--gold-dim); }
+
+    /* ─── Hero ─── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 1.5rem 5rem;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hero-eyebrow::before,
+    .hero-eyebrow::after {
+      content: '';
+      width: 32px;
+      height: 1px;
+      background: var(--gold-dim);
+      opacity: 0.5;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.8rem, 8vw, 5.5rem);
+      font-weight: 700;
+      line-height: 1.05;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 60px rgba(201,168,76,0.25);
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      font-weight: 400;
+      color: var(--parchment-dim);
+      letter-spacing: 0.06em;
+      margin-bottom: 1.75rem;
+    }
+
+    .hero-desc {
+      max-width: 560px;
+      font-size: 1.15rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      padding: 0.9rem 2rem;
+      background: linear-gradient(160deg, #2e5c30, #1a3d1c);
+      border: 1px solid rgba(60,140,60,0.5);
+      border-radius: var(--radius-sm);
+      color: #a8d8a8;
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(160deg, #3a7040, #224e24);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.5), 0 0 20px rgba(40,160,40,0.2);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      padding: 0.9rem 2rem;
+      background: transparent;
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: var(--radius-sm);
+      color: var(--parchment-dim);
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-secondary:hover {
+      border-color: var(--gold-dim);
+      color: var(--parchment);
+      background: rgba(201,168,76,0.06);
+    }
+
+    .hero-free-note {
+      margin-top: 1.25rem;
+      font-style: italic;
+      font-size: 0.88rem;
+      color: var(--text-dim);
+    }
+
+    /* ─── Dice row decoration ─── */
+    .dice-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      margin: 3rem 0 2rem;
+      flex-wrap: wrap;
+    }
+
+    .die-badge {
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.7);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      animation: die-float 3s ease-in-out infinite;
+    }
+
+    .die-badge:nth-child(1) { background: linear-gradient(145deg, #a88830, #6a5520); animation-delay: 0s; }
+    .die-badge:nth-child(2) { background: linear-gradient(145deg, #a88830, #6a5520); animation-delay: 0.2s; }
+    .die-badge:nth-child(3) { background: linear-gradient(145deg, #a85530, #6a3320); animation-delay: 0.4s; }
+    .die-badge:nth-child(4) { background: linear-gradient(145deg, #a84040, #6a2020); animation-delay: 0.6s; }
+    .die-badge:nth-child(5) { background: linear-gradient(145deg, #3060b0, #1a3a70); animation-delay: 0.8s; }
+    .die-badge:nth-child(6) { background: linear-gradient(145deg, #306830, #1a4a1a); animation-delay: 1s; }
+    .die-badge:nth-child(7) { background: linear-gradient(145deg, #703090, #3a1a5a); animation-delay: 1.2s; }
+
+    @keyframes die-float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-5px); }
+    }
+
+    /* ─── Section shared ─── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 5rem 1.5rem;
+    }
+
+    .section-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      text-align: center;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-desc {
+      font-style: italic;
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 520px;
+      margin: 0 auto 3rem;
+      line-height: 1.6;
+    }
+
+    /* ─── Features grid ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      backdrop-filter: blur(12px);
+      transition: border-color var(--transition), transform var(--transition);
+    }
+
+    .feature-card::before {
+      content: '';
+      display: block;
+      height: 2px;
+      margin: -1.75rem -1.75rem 1.5rem;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+      opacity: 0.6;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(201,168,76,0.35);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .feature-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--parchment);
+      letter-spacing: 0.04em;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-text {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ─── How it works ─── */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      position: relative;
+    }
+
+    .step {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .step-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(201,168,76,0.3);
+      background: rgba(201,168,76,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .step-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--parchment);
+      letter-spacing: 0.04em;
+    }
+
+    .step-text {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      max-width: 200px;
+    }
+
+    /* ─── Shared table callout ─── */
+    .callout {
+      background: var(--panel-bg);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: var(--radius-lg);
+      padding: 3.5rem 2.5rem;
+      text-align: center;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 48px rgba(0,0,0,0.5), 0 0 60px rgba(201,168,76,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .callout::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    .callout-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      display: block;
+      filter: drop-shadow(0 0 16px rgba(201,168,76,0.4));
+    }
+
+    .callout-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.4rem, 3vw, 2rem);
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+    }
+
+    .callout-text {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      max-width: 560px;
+      margin: 0 auto 2rem;
+      font-style: italic;
+    }
+
+    .table-code-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 1.2rem;
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.25em;
+      text-shadow: 0 0 16px rgba(201,168,76,0.4);
+      margin-bottom: 1.5rem;
+    }
+
+    /* ─── Social proof / trust ─── */
+    .trust-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2.5rem;
+      flex-wrap: wrap;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid rgba(201,168,76,0.08);
+      border-bottom: 1px solid rgba(201,168,76,0.08);
+    }
+
+    .trust-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .trust-item span:first-child { font-size: 1rem; }
+
+    /* ─── Auth section ─── */
+    #auth {
+      padding: 5rem 1.5rem 6rem;
+    }
+
+    .auth-layout {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 4rem;
+      align-items: center;
+    }
+
+    .auth-pitch h2 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .auth-pitch p {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      font-style: italic;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-perks {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .auth-perks li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.95rem;
+      color: var(--parchment-dim);
+      line-height: 1.5;
+    }
+
+    .auth-perks li::before {
+      content: '⬡';
+      color: var(--gold-dim);
+      font-size: 0.7rem;
+      margin-top: 3px;
+      flex-shrink: 0;
+    }
+
+    /* Auth card */
+    .auth-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius-md);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.04);
+      overflow: hidden;
+    }
+
+    .auth-card-top {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    }
+
+    .auth-card-body { padding: 1.75rem; }
+
+    .tabs {
+      display: flex;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(201,168,76,0.12);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+      margin-bottom: 1.5rem;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 0.45rem;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .tab.active {
+      background: rgba(201,168,76,0.16);
+      color: var(--gold);
+    }
+
+    .form { display: flex; flex-direction: column; gap: 0.9rem; }
+
+    .field { display: flex; flex-direction: column; gap: 0.3rem; }
+
+    .field label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.62rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .field input {
+      padding: 0.6rem 0.8rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(201,168,76,0.18);
+      border-radius: var(--radius-sm);
+      color: var(--parchment);
+      font-family: 'Crimson Pro', serif;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color var(--transition);
+    }
+    .field input:focus { border-color: var(--gold-dim); }
+    .field input::placeholder { color: var(--text-dim); }
+
+    .submit-btn {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: 0.25rem;
+      background: linear-gradient(160deg, #2e5c30, #1a3d1c);
+      border: 1px solid rgba(60,140,60,0.4);
+      border-radius: var(--radius-sm);
+      color: #a8d8a8;
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .submit-btn:hover:not(:disabled) {
+      background: linear-gradient(160deg, #3a7040, #224e24);
+      box-shadow: 0 0 20px rgba(40,160,40,0.2);
+    }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .auth-error {
+      background: rgba(122,31,31,0.4);
+      border: 1px solid rgba(200,60,60,0.3);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      color: #f4a0a0;
+      font-size: 0.85rem;
+      text-align: center;
+      display: none;
+    }
+    .auth-error.visible { display: block; }
+
+    .auth-success {
+      text-align: center;
+      color: #a8d8a8;
+      font-style: italic;
+      font-size: 0.88rem;
+      display: none;
+    }
+    .auth-success.visible { display: block; }
+
+    .forgot-link {
+      text-align: center;
+      margin-top: 0.25rem;
+    }
+    .forgot-link button {
+      background: none; border: none;
+      color: var(--text-muted);
+      font-family: 'Crimson Pro', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: color var(--transition);
+    }
+    .forgot-link button:hover { color: var(--parchment-dim); }
+
+    /* Reset panel */
+    #resetPanel { display: none; }
+    #resetPanel.visible { display: block; }
+
+    .back-btn {
+      background: none; border: none;
+      color: var(--text-muted);
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: color var(--transition);
+    }
+    .back-btn:hover { color: var(--parchment-dim); }
+
+    .reset-note {
+      font-style: italic;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    /* ─── Footer ─── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 2rem 1.5rem 3rem;
+      border-top: 1px solid rgba(201,168,76,0.08);
+    }
+
+    .footer-brand {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+      margin-bottom: 0.4rem;
+    }
+
+    .footer-link {
+      color: var(--gold-dim);
+      text-decoration: none;
+      transition: color var(--transition);
+    }
+    .footer-link:hover { color: var(--gold); }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 860px) {
+      .auth-layout {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+        max-width: 480px;
+      }
+      .auth-pitch { text-align: center; }
+      .auth-perks { align-items: flex-start; max-width: 360px; margin: 0 auto; }
+      nav { padding: 0.85rem 1.25rem; }
+      .nav-link { display: none; }
+    }
+
+    @media (max-width: 560px) {
+      .hero { padding: 6rem 1.25rem 4rem; }
+      .trust-strip { gap: 1.5rem; }
+      .callout { padding: 2.5rem 1.5rem; }
+    }
+  </style>
 </head>
 <body>
 
@@ -23,278 +785,375 @@
     <div class="ember e5"></div>
   </div>
 
-  <main class="app">
+  <!-- Nav -->
+  <nav>
+    <a class="nav-brand" href="#">
+      <span class="nav-icon">⬡</span>
+      <span class="nav-name">TTDice</span>
+    </a>
+    <div class="nav-actions">
+      <a class="nav-link" href="#features">Features</a>
+      <a class="nav-link" href="#how">How It Works</a>
+      <button class="nav-cta" onclick="document.getElementById('auth').scrollIntoView({behavior:'smooth'})">Get Started — Free</button>
+    </div>
+  </nav>
 
-    <!-- ─── LEFT PANEL ─── -->
-    <aside class="panel panel-left">
-      <div class="panel-inner">
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-eyebrow">For D&D, Pathfinder, and every system at your table</div>
+    <h1 class="hero-title">Roll Together.</h1>
+    <p class="hero-subtitle">Digital Dice Tray for Tabletop RPGs</p>
+    <p class="hero-desc">
+      A fast, fair dice roller built for the way your table actually plays.
+      Every player rolls their own dice. Everyone sees the results in real time.
+      No apps. No downloads. Just open a browser and roll.
+    </p>
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('auth').scrollIntoView({behavior:'smooth'})">Start Rolling — Free</button>
+      <button class="btn-secondary" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">See How It Works</button>
+    </div>
+    <p class="hero-free-note">Free forever. No credit card. No ads.</p>
 
-        <header class="brand">
-          <div class="brand-icon" aria-hidden="true">⬡</div>
-          <div>
-            <h1 class="brand-name">TTDice</h1>
-            <p class="brand-sub">Digital Dice Tray</p>
-          </div>
-        </header>
+    <div class="dice-row" aria-hidden="true">
+      <div class="die-badge">d4</div>
+      <div class="die-badge">d6</div>
+      <div class="die-badge">d8</div>
+      <div class="die-badge">d10</div>
+      <div class="die-badge">d12</div>
+      <div class="die-badge">d20</div>
+      <div class="die-badge">d%</div>
+    </div>
+  </section>
 
-        <!-- Mode Toggle -->
-        <div class="mode-toggle">
-          <button class="mode-btn active" id="soloModeBtn">Solo</button>
-          <button class="mode-btn" id="tableModeBtn">Shared Table</button>
+  <!-- Trust strip -->
+  <div class="trust-strip">
+    <div class="trust-item"><span>🔐</span><span>Cryptographically Fair Rolls</span></div>
+    <div class="trust-item"><span>⚡</span><span>Real-Time Shared Tables</span></div>
+    <div class="trust-item"><span>📜</span><span>Persistent Roll History</span></div>
+    <div class="trust-item"><span>🌐</span><span>No Download Required</span></div>
+    <div class="trust-item"><span>🎲</span><span>All Standard Dice</span></div>
+  </div>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="section-inner">
+      <p class="section-eyebrow">Built for your table</p>
+      <h2 class="section-title">Everything You Need at the Table</h2>
+      <p class="section-desc">No bloat. No subscription. Just the tools your group needs to play faster and focus on the story.</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon">🎲</span>
+          <div class="feature-title">Every Standard Die</div>
+          <p class="feature-text">d4, d6, d8, d10, d12, d20, and d100. Mix up to 10 dice at once. Click any die on the tray to remove it. Tap a preset and you're rolling in one click.</p>
         </div>
 
-        <nav class="die-rack" aria-label="Dice selector">
-          <h2 class="section-label">Select Dice</h2>
-
-          <div class="die-row" data-die="4">
-            <div class="die-pip d4-shape" aria-hidden="true"><span>4</span></div>
-            <div class="die-info"><span class="die-name">d4</span><span class="die-count" id="count-4">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d4">−</button>
-              <button class="btn-round plus"  aria-label="Add d4">+</button>
-            </div>
-          </div>
-
-          <div class="die-row" data-die="6">
-            <div class="die-pip d6-shape" aria-hidden="true"><span>6</span></div>
-            <div class="die-info"><span class="die-name">d6</span><span class="die-count" id="count-6">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d6">−</button>
-              <button class="btn-round plus"  aria-label="Add d6">+</button>
-            </div>
-          </div>
-
-          <div class="die-row" data-die="8">
-            <div class="die-pip d8-shape" aria-hidden="true"><span>8</span></div>
-            <div class="die-info"><span class="die-name">d8</span><span class="die-count" id="count-8">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d8">−</button>
-              <button class="btn-round plus"  aria-label="Add d8">+</button>
-            </div>
-          </div>
-
-          <div class="die-row" data-die="10">
-            <div class="die-pip d10-shape" aria-hidden="true"><span>10</span></div>
-            <div class="die-info"><span class="die-name">d10</span><span class="die-count" id="count-10">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d10">−</button>
-              <button class="btn-round plus"  aria-label="Add d10">+</button>
-            </div>
-          </div>
-
-          <div class="die-row" data-die="12">
-            <div class="die-pip d12-shape" aria-hidden="true"><span>12</span></div>
-            <div class="die-info"><span class="die-name">d12</span><span class="die-count" id="count-12">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d12">−</button>
-              <button class="btn-round plus"  aria-label="Add d12">+</button>
-            </div>
-          </div>
-
-          <div class="die-row" data-die="20">
-            <div class="die-pip d20-shape" aria-hidden="true"><span>20</span></div>
-            <div class="die-info"><span class="die-name">d20</span><span class="die-count" id="count-20">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d20">−</button>
-              <button class="btn-round plus"  aria-label="Add d20">+</button>
-            </div>
-          </div>
-
-          <div class="die-row" data-die="100">
-            <div class="die-pip d100-shape" aria-hidden="true"><span>%</span></div>
-            <div class="die-info"><span class="die-name">d100</span><span class="die-count" id="count-100">—</span></div>
-            <div class="die-btns">
-              <button class="btn-round minus" aria-label="Remove d100">−</button>
-              <button class="btn-round plus"  aria-label="Add d100">+</button>
-            </div>
-          </div>
-        </nav>
-
-        <div class="preset-rack">
-          <h2 class="section-label">Quick Presets</h2>
-          <div class="preset-grid">
-            <button class="preset-btn" data-preset="attack"   title="Attack roll">⚔ Attack</button>
-            <button class="preset-btn" data-preset="fireball" title="8d6 Fireball">🔥 Fireball</button>
-            <button class="preset-btn" data-preset="stat"     title="4d6 Stat roll">📊 Stat</button>
-            <button class="preset-btn" data-preset="sneak"    title="Sneak Attack 3d6">🗡 Sneak</button>
-          </div>
+        <div class="feature-card">
+          <span class="feature-icon">⚡</span>
+          <div class="feature-title">Shared Tables — Live</div>
+          <p class="feature-text">Create a table, share the code, and every player's rolls appear instantly in a shared feed. No accounts needed to join. Works across any device, any location.</p>
         </div>
 
-        <div class="crypto-badge" title="Uses browser crypto API for fair rolls">
-          <span class="badge-icon">🔐</span>
-          <span>Cryptographically fair rolls</span>
+        <div class="feature-card">
+          <span class="feature-icon">🔐</span>
+          <div class="feature-title">Cryptographically Fair</div>
+          <p class="feature-text">TTDice uses your browser's <code style="font-size:0.85em;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">crypto.getRandomValues</code> — the same API used for TLS encryption. No biased <code style="font-size:0.85em;background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">Math.random()</code>. Your dice are as fair as your browser can make them.</p>
         </div>
 
-      </div>
-    </aside>
+        <div class="feature-card">
+          <span class="feature-icon">⚔</span>
+          <div class="feature-title">Quick Presets</div>
+          <p class="feature-text">Attack roll, Fireball (8d6), Stat roll (4d6), Sneak Attack — one tap to load the right dice for the moment without counting and clicking.</p>
+        </div>
 
-    <!-- ─── CENTER: TRAY ─── -->
-    <section class="panel panel-center">
+        <div class="feature-card">
+          <span class="feature-icon">📊</span>
+          <div class="feature-title">Advantage & Disadvantage</div>
+          <p class="feature-text">Add two identical dice to unlock Advantage/Disadvantage mode. The app rolls both, shows you both results, and automatically picks the higher or lower — exactly like the rules say.</p>
+        </div>
 
-      <div class="tray-toolbar">
-        <span class="tray-title" id="trayTitle">Dice Tray</span>
-        <div class="tray-toolbar-actions">
-          <button class="btn-ghost" id="clearBtn" title="Clear tray" disabled>✕ Clear</button>
-          <button class="btn-ghost" id="copyResultBtn" title="Copy last roll" disabled>⎘ Copy</button>
+        <div class="feature-card">
+          <span class="feature-icon">📜</span>
+          <div class="feature-title">History That Persists</div>
+          <p class="feature-text">Your roll history and session stats survive page refreshes. Sign in and they follow you across every device. Never lose track of that legendary nat 20 moment.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">✨</span>
+          <div class="feature-title">Natural 20 Moments</div>
+          <p class="feature-text">Roll a natural 20 and the tray knows. Gold flash, big energy. Roll a 1 and the table feels it. Because those moments matter and they should look like they matter.</p>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-icon">📱</span>
+          <div class="feature-title">Works Everywhere</div>
+          <p class="feature-text">Desktop at home, phone at the game store, tablet on the couch — TTDice is fully responsive and works on any modern browser with no installation required.</p>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="tray-error-bar" id="trayError" aria-live="polite">
-        Tray full — maximum 10 dice
+  <!-- Shared table callout -->
+  <section>
+    <div class="section-inner">
+      <div class="callout">
+        <span class="callout-icon">🏰</span>
+        <h2 class="callout-title">Your Whole Table, One Roll Feed</h2>
+        <p class="callout-text">
+          The fighter rolls their attack. The wizard rolls spell damage. The DM rolls the enemy save.
+          Every result appears in a live shared feed — visible to everyone at the table,
+          whether they're across the room or across the country.
+        </p>
+        <div class="table-code-demo">DRAGON</div>
+        <p style="font-style:italic;font-size:0.9rem;color:var(--text-dim);margin-bottom:1.5rem;">Share a 6-character code. That's it. Your table is live.</p>
+        <button class="btn-primary" onclick="document.getElementById('auth').scrollIntoView({behavior:'smooth'})">Create Your Table</button>
       </div>
+    </div>
+  </section>
 
-      <div class="felt-tray" id="diceTray" role="region" aria-label="Dice tray">
-        <p class="tray-hint" id="trayHint">Add dice from the left panel</p>
-      </div>
+  <!-- How it works -->
+  <section id="how">
+    <div class="section-inner">
+      <p class="section-eyebrow">Simple by design</p>
+      <h2 class="section-title">Up and Rolling in 60 Seconds</h2>
+      <p class="section-desc">No tutorial. No setup. Just the dice your table needs.</p>
 
-      <div class="control-row">
-        <label class="control-label">Modifier</label>
-        <div class="stepper">
-          <button class="stepper-btn" id="bonusMinus" aria-label="Decrease modifier">−</button>
-          <span class="stepper-val" id="bonusValue">+0</span>
-          <button class="stepper-btn" id="bonusPlus"  aria-label="Increase modifier">+</button>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Create Account</div>
+          <p class="step-text">Free account in under a minute. Your history and tables persist across every session and device.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Pick Your Dice</div>
+          <p class="step-text">Select dice from the left panel or tap a preset. Mix any combination up to 10 dice.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Invite Your Table</div>
+          <p class="step-text">Create a shared table and send the 6-character code to your players. They join instantly.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-title">Roll Together</div>
+          <p class="step-text">Everyone rolls independently. Every result appears live in the shared feed. Play your game.</p>
         </div>
       </div>
+    </div>
+  </section>
 
-      <div class="control-row adv-row" id="advControl" aria-disabled="true">
-        <label class="adv-label-check">
-          <input type="checkbox" id="advEnable" disabled />
-          <span class="adv-label-text">Advantage / Disadv.</span>
-        </label>
-        <label class="toggle-switch" aria-label="Toggle advantage or disadvantage">
-          <input type="checkbox" id="advMode" checked disabled />
-          <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        </label>
-        <span class="adv-state-label" id="advState">Advantage</span>
+  <!-- Auth section -->
+  <section id="auth">
+    <div class="auth-layout">
+
+      <div class="auth-pitch">
+        <h2>Ready to Roll?</h2>
+        <p>
+          Free account. Your rolls, your history, your table — all in one place across every device you play on.
+        </p>
+        <ul class="auth-perks">
+          <li>Roll history that survives every refresh and every device</li>
+          <li>Create and rejoin shared tables automatically</li>
+          <li>Your display name follows you to every table</li>
+          <li>Session stats — dice rolled, best roll, running average</li>
+          <li>Saved presets coming in the next update</li>
+          <li>No ads. No tracking. No upsell. Just dice.</li>
+        </ul>
       </div>
 
-      <button class="roll-btn" id="rollBtn" disabled>
-        <span class="roll-btn-icon" aria-hidden="true">⬡</span>
-        Roll Dice
-      </button>
+      <div class="auth-card">
+        <div class="auth-card-top"></div>
+        <div class="auth-card-body">
 
-      <div class="results-area" id="results" aria-live="polite" aria-label="Roll results"></div>
+          <div id="authPanel">
+            <div class="tabs">
+              <button class="tab active" id="signinTab">Sign In</button>
+              <button class="tab" id="signupTab">Create Account</button>
+            </div>
 
-    </section>
+            <div class="auth-error" id="authError"></div>
+            <div class="auth-success" id="authSuccess"></div>
 
-    <!-- ─── RIGHT PANEL: SOLO / TABLE ─── -->
-    <aside class="panel panel-right">
-      <div class="panel-inner">
-
-        <!-- ── SOLO VIEW ── -->
-        <div id="soloView">
-
-          <div class="history-header">
-            <h2 class="section-label">Roll History</h2>
-            <button class="btn-ghost btn-small" id="clearHistoryBtn">Clear</button>
-          </div>
-          <ul class="history-list" id="historyList" aria-label="Roll history">
-            <li class="history-empty">No rolls yet</li>
-          </ul>
-
-          <div class="stats-block">
-            <h2 class="section-label">Session Stats</h2>
-            <div class="stats-grid">
-              <div class="stat-cell">
-                <span class="stat-val" id="statTotal">0</span>
-                <span class="stat-lbl">Dice Rolled</span>
+            <!-- Sign In -->
+            <form class="form" id="signinForm">
+              <div class="field">
+                <label for="siEmail">Email</label>
+                <input type="email" id="siEmail" placeholder="you@example.com" required autocomplete="email" />
               </div>
-              <div class="stat-cell">
-                <span class="stat-val" id="statRolls">0</span>
-                <span class="stat-lbl">Roll Count</span>
+              <div class="field">
+                <label for="siPassword">Password</label>
+                <input type="password" id="siPassword" placeholder="••••••••" required autocomplete="current-password" />
               </div>
-              <div class="stat-cell">
-                <span class="stat-val" id="statBest">—</span>
-                <span class="stat-lbl">Best Roll</span>
+              <button type="submit" class="submit-btn" id="signinBtn">Enter the Tray</button>
+              <div class="forgot-link">
+                <button type="button" id="forgotBtn">Forgot password?</button>
               </div>
-              <div class="stat-cell">
-                <span class="stat-val" id="statAvg">—</span>
-                <span class="stat-lbl">Average</span>
+            </form>
+
+            <!-- Sign Up -->
+            <form class="form" id="signupForm" style="display:none;">
+              <div class="field">
+                <label for="suName">Display Name</label>
+                <input type="text" id="suName" placeholder="Aragorn" required maxlength="24" autocomplete="nickname" />
               </div>
-            </div>
+              <div class="field">
+                <label for="suEmail">Email</label>
+                <input type="email" id="suEmail" placeholder="you@example.com" required autocomplete="email" />
+              </div>
+              <div class="field">
+                <label for="suPassword">Password</label>
+                <input type="password" id="suPassword" placeholder="Min. 6 characters" required autocomplete="new-password" minlength="6" />
+              </div>
+              <div class="field">
+                <label for="suConfirm">Confirm Password</label>
+                <input type="password" id="suConfirm" placeholder="••••••••" required autocomplete="new-password" minlength="6" />
+              </div>
+              <button type="submit" class="submit-btn" id="signupBtn">Create Account — Free</button>
+            </form>
           </div>
 
-          <div class="sync-block">
-            <div class="sync-status">
-              <span class="sync-dot" id="syncDot"></span>
-              <span id="syncLabel">Not connected</span>
-            </div>
-            <p class="sync-sub" id="syncSub">Rolls sync to Firestore when firebase-config.js is present.</p>
-          </div>
-
-        </div>
-
-        <!-- ── TABLE VIEW ── -->
-        <div id="tableView" style="display:none;">
-
-          <!-- State: lobby (not yet in a table) -->
-          <div id="tableLobby">
-            <h2 class="section-label">Shared Table</h2>
-
-            <div class="lobby-name-row">
-              <input type="text" id="playerNameInput" class="lobby-input" placeholder="Your name (e.g. Aragorn)" maxlength="24" />
-            </div>
-
-            <div class="lobby-actions">
-              <button class="lobby-btn lobby-btn-create" id="createTableBtn">✦ Create Table</button>
-              <div class="lobby-divider">or join existing</div>
-              <div class="lobby-join-row">
-                <input type="text" id="tableCodeInput" class="lobby-input lobby-code-input" placeholder="Table code" maxlength="6" />
-                <button class="lobby-btn lobby-btn-join" id="joinTableBtn">Join</button>
+          <!-- Reset -->
+          <div id="resetPanel">
+            <button class="back-btn" id="backBtn">← Back to sign in</button>
+            <p class="reset-note">Enter your email and we'll send a password reset link.</p>
+            <div class="auth-error" id="resetError"></div>
+            <div class="auth-success" id="resetSuccess"></div>
+            <form class="form" id="resetForm">
+              <div class="field">
+                <label for="resetEmail">Email</label>
+                <input type="email" id="resetEmail" placeholder="you@example.com" required autocomplete="email" />
               </div>
-            </div>
-
-            <p class="lobby-error" id="lobbyError"></p>
-          </div>
-
-          <!-- State: in a table -->
-          <div id="tableSession" style="display:none;">
-
-            <div class="table-header-row">
-              <div>
-                <h2 class="section-label">Live Table</h2>
-                <div class="table-code-display">
-                  <span id="tableCodeDisplay">——</span>
-                  <button class="btn-ghost btn-small" id="copyCodeBtn" title="Copy table code">⎘</button>
-                </div>
-              </div>
-              <button class="btn-ghost btn-small leave-btn" id="leaveTableBtn">Leave</button>
-            </div>
-
-            <!-- Players at table -->
-            <div class="players-block">
-              <h3 class="section-label">At the Table</h3>
-              <ul class="players-list" id="playersList"></ul>
-            </div>
-
-            <!-- Live feed -->
-            <div class="feed-header">
-              <h3 class="section-label">Roll Feed</h3>
-            </div>
-            <ul class="feed-list" id="feedList" aria-live="polite">
-              <li class="history-empty">Waiting for rolls…</li>
-            </ul>
-
+              <button type="submit" class="submit-btn">Send Reset Link</button>
+            </form>
           </div>
 
         </div>
-        <!-- end tableView -->
-
-        <footer class="app-footer">
-          <p>TTDice v3.0</p>
-          <p>by <a href="https://chanceitstudio.com" class="footer-link">ChanceITstudio</a></p>
-        </footer>
-
       </div>
-    </aside>
 
-  </main>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p class="footer-brand">TTDice v3.0 — by <a href="https://chanceitstudio.com" class="footer-link">ChanceITstudio</a></p>
+    <p style="font-size:0.78rem;color:var(--text-dim);margin-top:0.3rem;font-style:italic;">Free forever. Built for players, by a player.</p>
+  </footer>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  <script src="firebase-config.js" onerror="console.info('No firebase-config.js — DB disabled')"></script>
-  <script src="script.js"></script>
+  <script src="firebase-config.js" onerror="console.warn('No firebase-config.js')"></script>
+  <script>
+    let auth, db;
+    try {
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+      auth = firebase.auth();
+      db   = firebase.firestore();
+    } catch(e) { console.warn('Firebase init:', e); }
+
+    // Already signed in → go straight to tray
+    auth?.onAuthStateChanged(user => {
+      if (user) window.location.href = 'app.html';
+    });
+
+    // ─── Tabs ───
+    const signinTab  = document.getElementById('signinTab');
+    const signupTab  = document.getElementById('signupTab');
+    const signinForm = document.getElementById('signinForm');
+    const signupForm = document.getElementById('signupForm');
+    const authError  = document.getElementById('authError');
+    const authSuccess= document.getElementById('authSuccess');
+
+    signinTab.addEventListener('click', () => {
+      signinTab.classList.add('active'); signupTab.classList.remove('active');
+      signinForm.style.display = ''; signupForm.style.display = 'none';
+      clearMessages();
+    });
+    signupTab.addEventListener('click', () => {
+      signupTab.classList.add('active'); signinTab.classList.remove('active');
+      signupForm.style.display = ''; signinForm.style.display = 'none';
+      clearMessages();
+    });
+
+    function clearMessages() {
+      [authError, authSuccess].forEach(el => { el.textContent = ''; el.classList.remove('visible'); });
+    }
+    function showError(el, msg) { el.textContent = msg; el.classList.add('visible'); }
+    function showSuccess(el, msg) { el.textContent = msg; el.classList.add('visible'); }
+    function friendlyError(code) {
+      return ({
+        'auth/user-not-found'        : 'No account found with that email.',
+        'auth/wrong-password'        : 'Incorrect password.',
+        'auth/invalid-credential'    : 'Incorrect email or password.',
+        'auth/email-already-in-use'  : 'An account with this email already exists.',
+        'auth/weak-password'         : 'Password must be at least 6 characters.',
+        'auth/invalid-email'         : 'Please enter a valid email address.',
+        'auth/too-many-requests'     : 'Too many attempts. Try again later.',
+        'auth/network-request-failed': 'Network error. Check your connection.',
+      })[code] || 'Something went wrong. Try again.';
+    }
+
+    // ─── Sign In ───
+    signinForm.addEventListener('submit', async e => {
+      e.preventDefault(); clearMessages();
+      const btn = document.getElementById('signinBtn');
+      btn.disabled = true; btn.textContent = 'Signing in…';
+      try {
+        await auth.signInWithEmailAndPassword(
+          document.getElementById('siEmail').value.trim(),
+          document.getElementById('siPassword').value
+        );
+      } catch(err) {
+        showError(authError, friendlyError(err.code));
+        btn.disabled = false; btn.textContent = 'Enter the Tray';
+      }
+    });
+
+    // ─── Sign Up ───
+    signupForm.addEventListener('submit', async e => {
+      e.preventDefault(); clearMessages();
+      const btn = document.getElementById('signupBtn');
+      const name     = document.getElementById('suName').value.trim();
+      const email    = document.getElementById('suEmail').value.trim();
+      const password = document.getElementById('suPassword').value;
+      const confirm  = document.getElementById('suConfirm').value;
+      if (password !== confirm) { showError(authError, 'Passwords do not match.'); return; }
+      btn.disabled = true; btn.textContent = 'Creating account…';
+      try {
+        const cred = await auth.createUserWithEmailAndPassword(email, password);
+        await db.collection('ttdice_users').doc(cred.user.uid).set({
+          displayName : name,
+          email       : email,
+          createdAt   : firebase.firestore.FieldValue.serverTimestamp(),
+        });
+        await cred.user.updateProfile({ displayName: name });
+      } catch(err) {
+        showError(authError, friendlyError(err.code));
+        btn.disabled = false; btn.textContent = 'Create Account — Free';
+      }
+    });
+
+    // ─── Forgot password ───
+    const resetPanel  = document.getElementById('resetPanel');
+    const authPanel   = document.getElementById('authPanel');
+    document.getElementById('forgotBtn').addEventListener('click', () => {
+      authPanel.style.display = 'none'; resetPanel.classList.add('visible');
+    });
+    document.getElementById('backBtn').addEventListener('click', () => {
+      resetPanel.classList.remove('visible'); authPanel.style.display = '';
+    });
+    document.getElementById('resetForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const re = document.getElementById('resetError');
+      const rs = document.getElementById('resetSuccess');
+      re.classList.remove('visible'); rs.classList.remove('visible');
+      try {
+        await auth.sendPasswordResetEmail(document.getElementById('resetEmail').value.trim());
+        showSuccess(rs, 'Reset link sent — check your inbox.');
+      } catch(err) { showError(re, friendlyError(err.code)); }
+    });
+  </script>
 </body>
 </html>
