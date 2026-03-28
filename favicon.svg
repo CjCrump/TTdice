@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a3d1e"/>
+      <stop offset="100%" stop-color="#0d1f10"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <!-- Outer hexagon -->
+  <polygon points="16,2 27.5,8.5 27.5,23.5 16,30 4.5,23.5 4.5,8.5"
+    fill="none" stroke="#c9a84c" stroke-width="1.6" stroke-linejoin="round"/>
+  <!-- Inner hexagon -->
+  <polygon points="16,8 23,11.5 23,20.5 16,24 9,20.5 9,11.5"
+    fill="none" stroke="#c9a84c" stroke-width="0.7" stroke-linejoin="round" opacity="0.5"/>
+  <!-- Spoke lines -->
+  <line x1="16" y1="2"  x2="16" y2="8"  stroke="#c9a84c" stroke-width="0.5" opacity="0.35"/>
+  <line x1="27.5" y1="8.5"  x2="23" y2="11.5" stroke="#c9a84c" stroke-width="0.5" opacity="0.35"/>
+  <line x1="27.5" y1="23.5" x2="23" y2="20.5" stroke="#c9a84c" stroke-width="0.5" opacity="0.35"/>
+  <line x1="16" y1="30" x2="16" y2="24" stroke="#c9a84c" stroke-width="0.5" opacity="0.35"/>
+  <line x1="4.5" y1="23.5" x2="9" y2="20.5" stroke="#c9a84c" stroke-width="0.5" opacity="0.35"/>
+  <line x1="4.5" y1="8.5"  x2="9" y2="11.5" stroke="#c9a84c" stroke-width="0.5" opacity="0.35"/>
+</svg>
