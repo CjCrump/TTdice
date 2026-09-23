@@ -14,7 +14,7 @@ A dice roller for tabletop RPG sessions, built as a ChanceITstudio portfolio pie
 
 ## Live demo
 
-https://cjcrump.github.io/TTdice/
+https//:ttdice.chanceitstudio.com
 
 ## Screenshot
 
