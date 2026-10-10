@@ -125,9 +125,10 @@ body {
 }
 
 .brand-icon {
-  font-size: 2rem;
-  color: var(--gold);
-  line-height: 1;
+  width: 44px;
+  height: 44px;
+  display: block;
+  flex-shrink: 0;
   filter: drop-shadow(0 0 8px rgba(201,168,76,0.5));
   animation: pulse-glow 4s ease-in-out infinite;
 }
