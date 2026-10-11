@@ -26,13 +26,13 @@ function setDieSet(key) {
 
 // ─── SVG builders — rendered from real 3D solids by dice3d.js ───
 // val=null shows die label, val=number shows result, q (quaternion) = mid-tumble pose.
-const svgD4   = (c, val, q) => TTDice3D.svgDie(4,   c, val, q);
-const svgD6   = (c, val, q) => TTDice3D.svgDie(6,   c, val, q);
-const svgD8   = (c, val, q) => TTDice3D.svgDie(8,   c, val, q);
-const svgD10  = (c, val, q) => TTDice3D.svgDie(10,  c, val, q);
-const svgD12  = (c, val, q) => TTDice3D.svgDie(12,  c, val, q);
-const svgD20  = (c, val, q) => TTDice3D.svgDie(20,  c, val, q);
-const svgD100 = (c, val, q) => TTDice3D.svgDie(100, c, val, q);
+const svgD4   = (c, val, q, h) => TTDice3D.svgDie(4,   c, val, q, null, h);
+const svgD6   = (c, val, q, h) => TTDice3D.svgDie(6,   c, val, q, null, h);
+const svgD8   = (c, val, q, h) => TTDice3D.svgDie(8,   c, val, q, null, h);
+const svgD10  = (c, val, q, h) => TTDice3D.svgDie(10,  c, val, q, null, h);
+const svgD12  = (c, val, q, h) => TTDice3D.svgDie(12,  c, val, q, null, h);
+const svgD20  = (c, val, q, h) => TTDice3D.svgDie(20,  c, val, q, null, h);
+const svgD100 = (c, val, q, h) => TTDice3D.svgDie(100, c, val, q, null, h);
 
 const SVG_FNS = { 4: svgD4, 6: svgD6, 8: svgD8, 10: svgD10, 12: svgD12, 20: svgD20, 100: svgD100 };
 
@@ -118,7 +118,7 @@ function animateTray(diceEls, results, onComplete) {
       d.el.style.left = d.x + 'px';
       d.el.style.top  = d.y + 'px';
       d.el.querySelector('.die-svg-wrap').innerHTML =
-        (SVG_FNS[d.sides] || svgD20)(activeSet, d.shown, d.tumble.quat());
+        (SVG_FNS[d.sides] || svgD20)(activeSet, d.shown, d.tumble.quat(), TTDice3D.heightAt(progress));
     });
 
     if (progress < 1) {

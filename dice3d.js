@@ -7,6 +7,7 @@
   'use strict';
 
   const PHI = (1 + Math.sqrt(5)) / 2;
+  let uid = 0;
   const D2R = Math.PI / 180;
 
   // ─── vec3 ───
@@ -135,12 +136,12 @@
   const cyc = p => [p, [p[1], p[2], p[0]], [p[2], p[0], p[1]]];
 
   const SOLIDS = {
-    4:  { verts: [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]], scale: 54, tilt: [48, -22], font: 1.25 },
-    6:  { verts: signs([1, 1, 1]),                                         scale: 44, tilt: [26, -30], font: 1.0 },
-    8:  { verts: [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]], scale: 52, tilt: [16, -10], font: 1.2 },
-    10: { verts: d10Verts(),                                               scale: 52, tilt: [10, -6],   font: 1.35 },
-    12: { verts: [...signs([1, 1, 1]), ...cyc([0, 1 / PHI, PHI]).flatMap(signs)], scale: 50, tilt: [16, -10], font: 1.0 },
-    20: { verts: cyc([0, 1, PHI]).flatMap(signs),                         scale: 50, tilt: [14, -9],  font: 1.25 },
+    4:  { verts: [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]], scale: 56, tilt: [0, 0], font: 1.25, vertexUp: true },
+    6:  { verts: signs([1, 1, 1]),                                         scale: 60, tilt: [0, 0], font: 1.0 },
+    8:  { verts: [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]], scale: 52, tilt: [0, 0], font: 1.2 },
+    10: { verts: d10Verts(),                                               scale: 52, tilt: [0, 0],   font: 1.35 },
+    12: { verts: [...signs([1, 1, 1]), ...cyc([0, 1 / PHI, PHI]).flatMap(signs)], scale: 50, tilt: [0, 0], font: 1.0 },
+    20: { verts: cyc([0, 1, PHI]).flatMap(signs),                         scale: 50, tilt: [0, 0],  font: 1.25 },
   };
 
   const GEO = {};
@@ -178,27 +179,43 @@
     faces.forEach((f, i) => { f.num = num[i]; byNum[num[i]] = i; });
 
     const qT = qMul(qAxis([0, 1, 0], s.tilt[1]), qAxis([1, 0, 0], s.tilt[0]));
-    const light = norm(mApply(qToMat(qT), norm([-0.12, 0.12, 1])));
+    const light = norm([-0.3, 0.35, 1]);
 
-    GEO[sides] = { verts, faces, byNum, F, scale: s.scale, font: s.font, qT, light };
+    // d4 reads from the tip that points up: number the vertices 1..4 instead of faces
+    const vertexUp = !!s.vertexUp;
+    const vNum = verts.map((_, i) => i + 1);
+    if (vertexUp) { for (const k in byNum) delete byNum[k]; vNum.forEach((n, i) => { byNum[n] = i; }); }
+    GEO[sides] = { verts, faces, byNum, F, scale: s.scale, font: s.font, qT, light, vertexUp, vNum };
   }
 
   // ─── orientation helpers ───
   function restQuat(sides, value, twist = 0) {
     const g = GEO[sides];
-    const f = g.faces[g.byNum[value] ?? 0];
-    const qR = qFromMat([f.right, f.up, f.n]);
+    let qR;
+    if (g.vertexUp) {
+      // rest on the opposite face: winning tip points straight at the camera
+      const vi = g.byNum[value] ?? 0, n = norm(g.verts[vi]);
+      const o = g.verts[(vi + 1) % g.verts.length];
+      const up = norm(sub(o, scl(n, dot(o, n))));
+      qR = qFromMat([cross(up, n), up, n]);
+    } else {
+      const f = g.faces[g.byNum[value] ?? 0];
+      qR = qFromMat([f.right, f.up, f.n]);
+    }
     return qNorm(qMul(g.qT, qMul(qAxis([0, 0, 1], twist), qR)));
   }
-  const idleQuat = sides => restQuat(sides, GEO[sides].F);
+  const idleQuat = sides => restQuat(sides, GEO[sides].vertexUp ? GEO[sides].verts.length : GEO[sides].F);
 
   // ─── render one die body (no <svg> wrapper) ───
   // o: { q, face (index, optional), text, pip, scale (optional) }
   function renderBody(sides, c, o) {
     const g = GEO[sides];
     const M = qToMat(o.q);
-    const S = o.scale || g.scale;
+    const h = Math.max(0, o.h || 0);            // 0 = resting on felt, 1 = top of a bounce
+    const S0 = o.scale || g.scale;
+    const S = S0 * (1 + 0.22 * h);               // closer to camera = bigger
     const V = g.verts.map(p => mApply(M, p));
+    const id = 'ttd' + (++uid);
     const P = p => `${(p[0] * S).toFixed(2)},${(-p[1] * S).toFixed(2)}`;
     const lit = mixHex(c.body, c.pip, 0.1);
 
@@ -219,20 +236,61 @@
       if (e) e.cnt++; else edges.set(key, { a, b, cnt: 1 });
     }));
 
-    let shadow = '', polys = '', inner = '', rim = '';
+    // shadow is the die's own outline, drawn at felt height: drifts away and softens as the die rises
+    const Ps = p => `${(p[0] * S0).toFixed(2)},${(-p[1] * S0).toFixed(2)}`;
+    const half = norm(add(g.light, [0, 0, 1]));
+    let shadow = '', polys = '', gloss = '', inner = '', rim = '';
     vis.forEach(({ f, n }) => {
       const pts = f.idx.map(i => P(V[i])).join(' ');
       const t = Math.pow(Math.max(0, dot(n, g.light)), 3);
-      shadow += `<polygon points="${pts}"/>`;
+      shadow += `<polygon points="${f.idx.map(i => Ps(V[i])).join(' ')}"/>`;
       polys += `<polygon points="${pts}" fill="${mixHex(c.face, lit, 0.04 + 0.96 * t)}"/>`;
+      // soft falloff across each face so it reads slightly rounded, plus a glint on the face nearest the light
+      gloss += `<polygon points="${pts}" fill="url(#${id}g)"/>`;
+      const sp = Math.pow(Math.max(0, dot(n, half)), 60);
+      if (sp > 0.04) gloss += `<polygon points="${pts}" fill="url(#${id}s)" opacity="${Math.min(1, sp).toFixed(2)}"/>`;
     });
     edges.forEach(({ a, b, cnt }) => {
       const seg = `M${P(V[a])}L${P(V[b])}`;
-      if (cnt === 1) rim += seg; else inner += seg;
+      if (cnt === 1) { rim += seg; return; }
+      // inner edges catch light on the lit side: brightness from the two faces that meet there
+      const fs2 = vis.filter(({ f }) => f.idx.includes(a) && f.idx.includes(b));
+      const en = norm(fs2.reduce((acc, { n }) => add(acc, n), [0, 0, 0]));
+      const e = Math.max(0, dot(en, g.light));
+      inner += `<path d="${seg}" stroke="${mixHex(c.inner, c.pip, Math.pow(e, 4) * 0.55)}"/>`;
     });
+    const L2 = [g.light[0], -g.light[1]], Ll = Math.hypot(L2[0], L2[1]) || 1, ux = L2[0] / Ll, uy = L2[1] / Ll;
+    const R = S * 1.05;
+    const defs = `<defs>
+      <filter id="${id}b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${(1.8 + h * 5).toFixed(2)}"/></filter>
+      <linearGradient id="${id}g" x1="${(0.5 + ux * 0.5).toFixed(3)}" y1="${(0.5 + uy * 0.5).toFixed(3)}" x2="${(0.5 - ux * 0.5).toFixed(3)}" y2="${(0.5 - uy * 0.5).toFixed(3)}">
+        <stop offset="0" stop-color="#fff" stop-opacity="0.07"/><stop offset="0.6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.14"/></linearGradient>
+      <radialGradient id="${id}s" cx="${(0.5 + ux * 0.18).toFixed(3)}" cy="${(0.5 + uy * 0.18).toFixed(3)}" r="0.55">
+        <stop offset="0" stop-color="#fff" stop-opacity="0.32"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}r" gradientUnits="userSpaceOnUse" x1="${(ux * R).toFixed(1)}" y1="${(uy * R).toFixed(1)}" x2="${(-ux * R).toFixed(1)}" y2="${(-uy * R).toFixed(1)}">
+        <stop offset="0" stop-color="${mixHex(c.edge, '#ffffff', 0.45)}"/><stop offset="0.45" stop-color="${c.edge}"/><stop offset="1" stop-color="${mixHex(c.edge, '#000000', 0.35)}"/></linearGradient>
+    </defs>`;
+    const sl = Math.hypot(g.light[0], g.light[1]) || 1;
+    const sdx = -g.light[0] / sl, sdy = g.light[1] / sl;   // shadow falls away from the light
+    const off = 4 + h * 34;
 
     let text = '';
-    if (o.text !== '' && o.text != null) {
+    if (g.vertexUp) {
+      // d4: each face carries its three corner numbers, upright toward their corner.
+      // The corner nearest the camera is the result and gets the bright pip color.
+      const top = V.reduce((b, v, i) => (v[2] > V[b][2] ? i : b), 0);
+      const dim = mixHex(c.pip, c.face, 0.5);
+      vis.forEach(({ f }) => f.idx.forEach(vi => {
+        const P0 = g.verts[vi], C0 = add(scl(f.c, 0.45), scl(P0, 0.55));
+        const U0 = norm(sub(P0, f.c));
+        const Ur = mApply(M, U0), Cc = mApply(M, C0);
+        // screen-flat glyph, rotated so its top points at its corner (stays legible when the face is steep)
+        const ang = Math.atan2(Ur[0], Ur[1]) * 180 / Math.PI;
+        const hot = vi === top && (o.text !== '' && o.text != null);
+        const fs = S * (hot ? 0.26 : 0.2);
+        text += `<text transform="translate(${(S * Cc[0]).toFixed(2)},${(-S * Cc[1]).toFixed(2)}) rotate(${ang.toFixed(1)})" text-anchor="middle" dominant-baseline="central" font-family="Georgia,serif" font-size="${fs.toFixed(2)}" font-weight="900" fill="${hot ? (o.pip || c.pip) : dim}">${g.vNum[vi]}</text>`;
+      }));
+    } else if (o.text !== '' && o.text != null) {
       const f = g.faces[focal];
       const R = mApply(M, f.right), U = mApply(M, f.up), C = mApply(M, f.c);
       const str = String(o.text);
@@ -243,20 +301,21 @@
       text = `<text transform="matrix(${mtx})" text-anchor="middle" dominant-baseline="central" font-family="Georgia,serif" font-size="${fs}" font-weight="900" fill="${o.pip || c.pip}"${ul}>${str}</text>`;
     }
 
-    return `<g opacity="0.45" transform="translate(3,4)" fill="#000">${shadow}</g>` +
-      polys +
-      `<path d="${inner}" fill="none" stroke="${c.inner}" stroke-width="1.5" stroke-linecap="round"/>` +
+    return defs +
+      `<g opacity="${(0.62 - h * 0.27).toFixed(2)}" fill="#000" filter="url(#${id}b)" transform="translate(${(sdx * off).toFixed(2)},${(sdy * off).toFixed(2)}) scale(${(1 + h * 0.06).toFixed(3)})">${shadow}</g>` +
+      polys + gloss +
+      `<g fill="none" stroke-width="1.5" stroke-linecap="round">${inner}</g>` +
       text +
-      `<path d="${rim}" fill="none" stroke="${c.edge}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+      `<path d="${rim}" fill="none" stroke="url(#${id}r)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
   }
 
   const wrap = (vb, body) =>
-    `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">${body}</svg>`;
+    `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" overflow="visible" style="overflow:visible">${body}</svg>`;
 
   // ─── public: single die SVG ───
   // val: null = idle label, number = result. q optional (tumbling). label overrides idle text.
-  function svgDie(sides, c, val, q, label) {
-    if (sides === 100) return svgD100(c, val, q);
+  function svgDie(sides, c, val, q, label, h) {
+    if (sides === 100) return svgD100(c, val, q, h);
     const g = GEO[sides];
     const has = val !== null && val !== undefined;
     const pip = sides === 20 && has ? (val === 20 ? '#ffe060' : val === 1 ? '#ff6060' : null) : null;
@@ -264,7 +323,8 @@
       ? { q, text: has ? val : `d${sides}`, pip }
       : has
         ? { q: restQuat(sides, val), face: g.byNum[val], text: val, pip }
-        : { q: idleQuat(sides), face: g.byNum[g.F], text: label || `d${sides}` };
+        : { q: idleQuat(sides), face: g.vertexUp ? null : g.byNum[g.F], text: g.vertexUp ? '' : (label || `d${sides}`) };
+    o.h = h;
     return wrap('-58 -58 116 116', renderBody(sides, c, o));
   }
 
@@ -273,7 +333,7 @@
     const tens = Math.floor((val % 100) / 10), ones = val % 10;
     return { tens, ones, tLbl: String(tens * 10).padStart(2, '0'), oLbl: String(ones) };
   };
-  function svgD100(c, val, qs) {
+  function svgD100(c, val, qs, h) {
     const has = val !== null && val !== undefined;
     const sc = 38;
     let a, b, mid = '';
@@ -292,8 +352,8 @@
       b = { q: idleQuat(10), face: GEO[10].byNum[10], text: '', scale: sc };
     }
     return wrap('-92 -46 184 92',
-      `<g transform="translate(-48,0)">${renderBody(10, c, a)}</g>` +
-      `<g transform="translate(48,0)">${renderBody(10, c, b)}</g>` +
+      `<g transform="translate(-48,0)">${renderBody(10, c, { ...a, h })}</g>` +
+      `<g transform="translate(48,0)">${renderBody(10, c, { ...b, h })}</g>` +
       `<text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-family="Georgia,serif" font-size="16" font-weight="900" fill="${c.pip}">${mid}</text>`);
   }
 
@@ -329,5 +389,11 @@
     return st;
   }
 
-  root.TTDice3D = { GEO, svgDie, svgD100, renderBody, restQuat, idleQuat, makeTumble, qSlerp, qRandom };
+  // bounce height for a roll at progress p (0..1): three shrinking hops, flat on the felt from 85%
+  const heightAt = p => {
+    const k = Math.min(1, p / 0.85);
+    return k >= 1 ? 0 : Math.abs(Math.sin(Math.PI * 3 * k)) * Math.pow(1 - k, 1.4);
+  };
+
+  root.TTDice3D = { heightAt, GEO, svgDie, svgD100, renderBody, restQuat, idleQuat, makeTumble, qSlerp, qRandom };
 })(typeof window !== 'undefined' ? window : globalThis);

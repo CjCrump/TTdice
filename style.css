@@ -502,7 +502,7 @@ body {
   cursor: pointer;
   user-select: none;
   transition: transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 200ms ease;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+  /* shadow is drawn by dice3d.js so it can lift and blur with bounce height */
   flex-shrink: 0;
 }
 
